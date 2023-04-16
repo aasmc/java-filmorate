@@ -40,6 +40,7 @@ public class DefaultControllerAdvice {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(MethodArgumentNotValidException ex) {
+        log.error(ex.getMessage());
         List<FieldError> fieldErrors = ex.getBindingResult().getFieldErrors();
         ErrorResponse response = ErrorResponse.builder()
                 .message(ex.getMessage())

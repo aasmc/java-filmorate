@@ -7,9 +7,10 @@ import java.time.Month;
 
 public class ReleaseDateValidator implements ConstraintValidator<ReleaseDateCorrect, LocalDate> {
 
+    private static final LocalDate THRESHOLD = LocalDate.of(1895, Month.DECEMBER, 28);
+
     @Override
     public boolean isValid(LocalDate value, ConstraintValidatorContext context) {
-        LocalDate threshold = LocalDate.of(1895, Month.DECEMBER, 28);
-        return value.isAfter(threshold);
+        return value.isAfter(THRESHOLD);
     }
 }
