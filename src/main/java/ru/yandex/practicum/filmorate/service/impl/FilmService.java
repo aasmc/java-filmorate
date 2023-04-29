@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.IFilmService;
+import ru.yandex.practicum.filmorate.service.IUserService;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
 public class FilmService implements IFilmService {
 
     private final FilmStorage filmStorage;
-    private final UserService userService;
+    private final IUserService userService;
 
 
     @Override
