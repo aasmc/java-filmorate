@@ -12,4 +12,14 @@ public interface IUserService {
 
     User updateUser(User user);
 
+    void addFriend(Long userId, Long friendId);
+
+    void removeFriend(Long userId, Long friendId);
+
+    List<User> findCommonFriendsWith(Long userId, Long friendId);
+
+    List<User> findFriendsOfUser(Long userId);
+
+    User getUserById(Long userId);
+
 }

@@ -8,6 +8,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Заметка для себя на будущее: пока не используем Spring Data JPA + Hibernate, можно оставить аннотацию @Data,
@@ -33,4 +35,19 @@ public class Film {
 
     @Positive(message = "Продолжительность фильма должна быть положительной.")
     private long duration;
+
+    private final Set<Long> userLikes = new HashSet<>();
+
+    public void addLikeByUserWithId(Long userId) {
+        userLikes.add(userId);
+    }
+
+    public void removeLikeByUserWithId(Long userId) {
+        userLikes.remove(userId);
+    }
+
+    public int getLikesCount() {
+        return userLikes.size();
+    }
+
 }

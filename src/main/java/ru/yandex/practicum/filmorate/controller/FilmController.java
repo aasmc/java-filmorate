@@ -38,4 +38,31 @@ public class FilmController {
         Film updated = service.updateFilm(film);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
+
+    @PutMapping("/{id}/like/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void addLike(@PathVariable("id") Long filmId,
+                        @PathVariable("userId") Long userId) {
+        service.addLikeByUserWithId(userId, filmId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteLike(@PathVariable("id") Long filmId,
+                           @PathVariable("userId") Long userId) {
+        service.removeLikeByUserWithId(userId, filmId);
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<Film>> getPopularFilms(@RequestParam(name = "count", defaultValue = "10") Integer count) {
+        List<Film> films = service.getMostPopularFilms(count);
+        return new ResponseEntity<>(films, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Film> getFilmById(@PathVariable("id") Long id) {
+        Film film = service.getFilmById(id);
+        return new ResponseEntity<>(film, HttpStatus.OK);
+    }
+
 }

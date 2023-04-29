@@ -41,6 +41,39 @@ public class UserController {
         return service.updateUser(user);
     }
 
+    @PutMapping("/{id}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void addFriend(@PathVariable("id") Long userId,
+                          @PathVariable("friendId") Long friendId) {
+        service.addFriend(userId, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.OK)
+    public void removeFriend(@PathVariable("id") Long userId,
+                             @PathVariable("friendId") Long friendId) {
+        service.removeFriend(userId, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    @ResponseStatus(HttpStatus.OK)
+    public List<User> getFriendsOfUser(@PathVariable("id") Long id) {
+        return service.findFriendsOfUser(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<User> getCommonFriendsOfUsers(@PathVariable("id") Long userId,
+                                              @PathVariable("otherId") Long friendId)  {
+        return service.findCommonFriendsWith(userId, friendId);
+    }
+
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public User getUserById(@PathVariable("id") Long id) {
+        return service.getUserById(id);
+    }
+
     private void checkAndSetUserNameIfNeeded(User user) {
         if (ObjectUtils.isEmpty(user.getName())) {
             user.setName(user.getLogin());
