@@ -29,9 +29,9 @@ public class DefaultControllerAdvice {
                 .build();
     }
 
-    @ExceptionHandler(value = {ResourceAlreadyExistsException.class})
+    @ExceptionHandler(value = {ResourceAlreadyExistsException.class, HttpMessageNotReadableException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleResourceExistsException(ResourceAlreadyExistsException ex) {
+    public ErrorResponse handleResourceExistsAndNullRequestBody(RuntimeException ex) {
         log.error(ex.getMessage());
         return ErrorResponse.builder()
                 .message(ex.getMessage())
@@ -47,16 +47,6 @@ public class DefaultControllerAdvice {
         return ErrorResponse.builder()
                 .message(ex.getMessage())
                 .fieldErrors(fieldErrors.stream().map(FieldError::getDefaultMessage).collect(Collectors.toList()))
-                .code(HttpStatus.BAD_REQUEST.value())
-                .build();
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleNullRequestBody(HttpMessageNotReadableException ex) {
-        log.error(ex.getMessage());
-        return ErrorResponse.builder()
-                .message(ex.getMessage())
                 .code(HttpStatus.BAD_REQUEST.value())
                 .build();
     }

@@ -17,25 +17,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmController {
 
-    private final IFilmService service;
+    private final IFilmService filmService;
 
     @GetMapping
     public ResponseEntity<List<Film>> getAllFilms() {
-        List<Film> films = service.findAllFilms();
+        List<Film> films = filmService.findAllFilms();
         return new ResponseEntity<>(films, HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<Film> createFilm(@RequestBody @Valid Film film) {
         log.debug("Creating film {}", film);
-        Film created = service.createFilm(film);
+        Film created = filmService.createFilm(film);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping
     public ResponseEntity<Film> updateFilm(@RequestBody @Valid Film film) {
         log.debug("Updating film {}", film);
-        Film updated = service.updateFilm(film);
+        Film updated = filmService.updateFilm(film);
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
@@ -43,25 +43,25 @@ public class FilmController {
     @ResponseStatus(HttpStatus.OK)
     public void addLike(@PathVariable("id") Long filmId,
                         @PathVariable("userId") Long userId) {
-        service.addLikeByUserWithId(userId, filmId);
+        filmService.addLikeByUserWithId(userId, filmId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public void deleteLike(@PathVariable("id") Long filmId,
                            @PathVariable("userId") Long userId) {
-        service.removeLikeByUserWithId(userId, filmId);
+        filmService.removeLikeByUserWithId(userId, filmId);
     }
 
     @GetMapping("/popular")
     public ResponseEntity<List<Film>> getPopularFilms(@RequestParam(name = "count", defaultValue = "10") Integer count) {
-        List<Film> films = service.getMostPopularFilms(count);
+        List<Film> films = filmService.getMostPopularFilms(count);
         return new ResponseEntity<>(films, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Film> getFilmById(@PathVariable("id") Long id) {
-        Film film = service.getFilmById(id);
+        Film film = filmService.getFilmById(id);
         return new ResponseEntity<>(film, HttpStatus.OK);
     }
 

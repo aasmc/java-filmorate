@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateCorrect;
 
 import javax.validation.constraints.NotBlank;
@@ -19,6 +20,7 @@ import java.util.Set;
  */
 @Data
 @Builder
+@Jacksonized
 public class Film {
     /**
      * Специально сделал Long, а не long, так как, наверняка, в дальнейшем будем
@@ -36,7 +38,8 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительной.")
     private long duration;
 
-    private final Set<Long> userLikes = new HashSet<>();
+    @Builder.Default
+    private Set<Long> userLikes = new HashSet<>();
 
     public void addLikeByUserWithId(Long userId) {
         userLikes.add(userId);

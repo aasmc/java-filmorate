@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.filmorate.validation.LoginCorrect;
 
 import javax.validation.constraints.Email;
@@ -18,6 +19,7 @@ import java.util.Set;
  */
 @Data
 @Builder
+@Jacksonized
 public class User {
     /**
      * Специально сделал Long, а не long, так как, наверняка, в дальнейшем будем
@@ -31,7 +33,8 @@ public class User {
     private String name;
     @Past
     private LocalDate birthday;
-    private final Set<Long> friends = new HashSet<>();
+    @Builder.Default
+    private Set<Long> friends = new HashSet<>();
 
     public void addFriend(User user) {
         friends.add(user.getId());
