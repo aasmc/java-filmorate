@@ -2,12 +2,15 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateCorrect;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Заметка для себя на будущее: пока не используем Spring Data JPA + Hibernate, можно оставить аннотацию @Data,
@@ -17,6 +20,7 @@ import java.time.LocalDate;
  */
 @Data
 @Builder
+@Jacksonized
 public class Film {
     /**
      * Специально сделал Long, а не long, так как, наверняка, в дальнейшем будем
@@ -33,4 +37,20 @@ public class Film {
 
     @Positive(message = "Продолжительность фильма должна быть положительной.")
     private long duration;
+
+    @Builder.Default
+    private Set<Long> userLikes = new HashSet<>();
+
+    public void addLikeByUserWithId(Long userId) {
+        userLikes.add(userId);
+    }
+
+    public void removeLikeByUserWithId(Long userId) {
+        userLikes.remove(userId);
+    }
+
+    public int getLikesCount() {
+        return userLikes.size();
+    }
+
 }
