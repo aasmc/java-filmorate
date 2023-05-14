@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ReleaseDateCorrect {
-    String message() default "Invalid phone number";
+    String message() default "Invalid release date.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

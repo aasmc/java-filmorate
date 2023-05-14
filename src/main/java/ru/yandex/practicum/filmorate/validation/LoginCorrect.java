@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LoginCorrect {
-    String message() default "Invalid phone number";
+    String message() default "Invalid login.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

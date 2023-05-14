@@ -43,6 +43,7 @@ public class User {
 
     public void removeFriend(User user) {
         friends.remove(user.getId());
+        user.getFriends().remove(id);
     }
 
     public Set<Long> commonFriendsWith(User user) {
