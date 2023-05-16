@@ -78,7 +78,7 @@ DELETE FROM FilmUserLikes WHERE film_id = 1 ANF user_id = 2;
 ```sql
 WITH top_id_to_count AS (SELECT ff.id t_id, COUNT(ful.film_id) cnt
                          FROM Films ff
-                         LEFT JOIN FilmUserLikes ful ON ff.film_id = ful.film_id
+                         LEFT JOIN FilmUserLikes ful ON ff.id = ful.film_id
                          GROUP BY t_id
                          ORDER BY cnt DESC
                          LIMIT 10)
@@ -92,6 +92,23 @@ SELECT f.id,
     LEFT JOIN FilmGenre fg ON f.id = fg.film_id
     LEFT JOIN Genres g ON g.id = fg.genre_id
     WHERE f.id IN (SELECT t_id FROM top_id_to_count);
+```
+То же самое, но без жанров и в отсортированном по просмотрам порядке: 
+```sql
+WITH top_id_to_count AS (SELECT ff.id t_id, COUNT(ful.film_id) cnt
+                         FROM "Films" ff
+                                  LEFT JOIN "FilmUserLikes" ful ON ff.id = ful.film_id
+                         GROUP BY t_id
+                         ORDER BY cnt DESC
+                         LIMIT 10)
+SELECT f.id,
+       f.name,
+       f.description,
+       f.release_date,
+       f.duration
+FROM "Films" f
+    INNER JOIN top_id_to_count titc on f.id = titc.t_id
+    ORDER BY titc.cnt DESC;
 ```
 5. Получить всех пользователей
 ```sql
