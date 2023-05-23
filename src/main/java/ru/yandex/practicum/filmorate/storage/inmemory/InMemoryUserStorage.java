@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.inmemory;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
@@ -11,7 +12,10 @@ import ru.yandex.practicum.filmorate.util.IdGenerator;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_FILM_STORAGE;
+
 @Component
+@Qualifier(IN_MEMORY_FILM_STORAGE)
 @RequiredArgsConstructor
 public class InMemoryUserStorage implements UserStorage {
 
@@ -47,9 +51,10 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public void addFriendForUser(Long userId, Long newFriendId) {
         User user = findUserOrThrow(userId);
-        User friend = findFriendOrThrow(newFriendId);
-        user.addFriend(friend);
+        User userFriend = findFriendOrThrow(newFriendId);
+        user.addFriend(userFriend);
     }
+
 
     @Override
     public void removeFriendForUser(Long userId, Long friendId) {
@@ -61,31 +66,21 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public List<User> getFriends(Long userId) {
         User user = findUserOrThrow(userId);
-        return findUsersWithIds(user.getFriends());
+        return List.copyOf(user.getFriends());
     }
 
     @Override
     public List<User> getCommonFriendsForUser(Long userId, Long friendId) {
         User user = findUserOrThrow(userId);
         User friend = findFriendOrThrow(friendId);
-        Set<Long> commonFriendsIds = user.commonFriendsWith(friend);
-        return findUsersWithIds(commonFriendsIds);
+        Set<User> commonFriends = new HashSet<>(user.getFriends());
+        commonFriends.retainAll(friend.getFriends());
+        return List.copyOf(commonFriends);
     }
 
     @Override
     public User findUserById(Long id) {
         return findUserOrThrow(id);
-    }
-
-    private List<User> findUsersWithIds(Set<Long> ids) {
-        List<User> users = new ArrayList<>();
-        ids.forEach(uId -> {
-            User friend = userMap.get(uId);
-            if (null != friend) {
-                users.add(friend);
-            }
-        });
-        return users;
     }
 
     private User findUserOrThrow(Long userId) {

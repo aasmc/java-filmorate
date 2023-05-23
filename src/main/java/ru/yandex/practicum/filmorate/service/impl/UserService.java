@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.IUserService;
+import ru.yandex.practicum.filmorate.storage.Constants;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService implements IUserService {
 
+    @Qualifier(Constants.IN_MEMORY_USER_STORAGE)
     private final UserStorage userStorage;
 
     @Override

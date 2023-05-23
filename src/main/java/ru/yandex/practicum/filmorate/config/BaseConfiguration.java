@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Map;
@@ -18,6 +20,16 @@ public class BaseConfiguration {
 
     @Bean
     public Map<Long, User> userMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean
+    public Map<Long, Genre> genreMap() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @Bean
+    public Map<Long, Rating> ratingMap() {
         return new ConcurrentHashMap<>();
     }
 

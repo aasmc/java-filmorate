@@ -9,7 +9,9 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -38,19 +40,23 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительной.")
     private long duration;
 
+    private Rating mpa;
+
     @Builder.Default
-    private Set<Long> userLikes = new HashSet<>();
+    private List<Genre> genres = new ArrayList<>();
 
-    public void addLikeByUserWithId(Long userId) {
-        userLikes.add(userId);
-    }
-
-    public void removeLikeByUserWithId(Long userId) {
-        userLikes.remove(userId);
-    }
+    @Builder.Default
+    private Set<User> userLikes = new HashSet<>();
 
     public int getLikesCount() {
         return userLikes.size();
     }
 
+    public void addUserLike(User user) {
+        userLikes.add(user);
+    }
+
+    public void removeUserLike(User user) {
+        userLikes.remove(user);
+    }
 }

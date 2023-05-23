@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate.storage.inmemory;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.util.IdGenerator;
 
@@ -15,11 +17,15 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_FILM_STORAGE;
+
 @Component
+@Qualifier(IN_MEMORY_FILM_STORAGE)
 @RequiredArgsConstructor
 public class InMemoryFilmStorage implements FilmStorage {
 
     private final Map<Long, Film> filmMap;
+    private final Map<Long, User> userMap;
     private final IdGenerator idGenerator;
 
     @Override
@@ -51,13 +57,15 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public void addUserLikeToFilm(Long userId, Long filmId) {
         Film film = findFilmOrThrow(filmId);
-        film.addLikeByUserWithId(userId);
+        User user = findUserOrThrow(userId);
+        film.addUserLike(user);
     }
 
     @Override
     public void removeUserLike(Long userId, Long filmId) {
         Film film = findFilmOrThrow(filmId);
-        film.removeLikeByUserWithId(userId);
+        User user = findUserOrThrow(userId);
+        film.removeUserLike(user);
     }
 
     @Override
@@ -84,6 +92,16 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     private Film findFilmOrThrow(Long filmId, Supplier<String> msgSupplier) {
         return Optional.ofNullable(filmMap.get(filmId))
+                .orElseThrow(() -> new ResourceNotFoundException(msgSupplier.get()));
+    }
+
+    private User findUserOrThrow(Long userId) {
+        return findUserOrThrow(userId,
+                () -> provideNotFoundErrorMessage("User", userId));
+    }
+
+    private User findUserOrThrow(Long userId, Supplier<String> msgSupplier) {
+        return Optional.ofNullable(userMap.get(userId))
                 .orElseThrow(() -> new ResourceNotFoundException(msgSupplier.get()));
     }
 
