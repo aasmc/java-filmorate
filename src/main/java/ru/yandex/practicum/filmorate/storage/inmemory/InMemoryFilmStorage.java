@@ -91,6 +91,14 @@ public class InMemoryFilmStorage implements FilmStorage {
         return Optional.ofNullable(filmMap.get(filmId));
     }
 
+    @Override
+    public Optional<Long> checkFilmId(Long id) {
+        if (filmMap.containsKey(id)) {
+            return Optional.of(id);
+        }
+        return Optional.empty();
+    }
+
     private Film findFilmOrThrow(Long filmId) {
         return findFilmOrThrow(filmId,
                 () -> provideNotFoundErrorMessage("Film", filmId));

@@ -21,4 +21,14 @@ public interface FilmStorage {
 
     Optional<Film> findFilmById(Long filmId);
 
+    Optional<Long> checkFilmId(Long id);
+
+    default boolean filmAlreadyExists(Long filmId) {
+        return filmId != null && checkFilmId(filmId).isPresent();
+    }
+
+    default boolean filmNotFound(Long filmId) {
+        return filmId == null || checkFilmId(filmId).isEmpty();
+    }
+
 }
