@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.IUserService;
 import ru.yandex.practicum.filmorate.storage.Constants;
@@ -14,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService implements IUserService {
 
-    @Qualifier(Constants.IN_MEMORY_USER_STORAGE)
+    @Qualifier(Constants.DB_USER_STORAGE)
     private final UserStorage userStorage;
 
     @Override
@@ -54,7 +55,11 @@ public class UserService implements IUserService {
 
     @Override
     public User getUserById(Long userId) {
-        return userStorage.findUserById(userId);
+        return userStorage.findUserById(userId)
+                .orElseThrow(() -> {
+                    String msg = String.format("User with ID = %d not found.", userId);
+                    return new ResourceNotFoundException(msg);
+                });
     }
 
 }

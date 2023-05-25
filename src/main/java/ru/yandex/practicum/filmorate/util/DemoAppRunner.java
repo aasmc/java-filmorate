@@ -20,6 +20,7 @@ public class DemoAppRunner implements ApplicationRunner {
     private final GenreStorage genreStorage;
     @Qualifier(Constants.IN_MEMORY_RATING_STORAGE)
     private final RatingStorage ratingStorage;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         genreStorage.save(Genre.builder().name(GenreName.COMEDY).build());

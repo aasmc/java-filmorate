@@ -105,17 +105,40 @@ FROM "Films" f
 ```
 5. Получить всех пользователей
 ```sql
-SELECT * FROM Users
+SELECT u.id u_id,
+       u.email u_email,
+       u.login u_login,
+       u.name u_name,
+       u.birthday u_bd,
+       uu.id f_id,
+       uu.email f_email,
+       uu.login f_login,
+       uu.name f_name,
+       uu.birthday f_bd
+    FROM Users u 
+    LEFT JOIN FriendshipStatus fs on u.id = fs.user_id 
+    LEFT JOIN Users uu on.uu.id = fs.friend_id;
 ```
 6. Получить друзей пользователя с ID = 1
 ```sql
-SELECT *
-FROM users u
+SELECT u.id u_id,
+       u.email u_email,
+       u.login u_login,
+       u.name u_name,
+       u.birthday u_bd,
+       uu.id f_id,
+       uu.email f_email,
+       uu.login f_login,
+       uu.name f_name,
+       uu.birthday f_bd
+FROM Users u
+         LEFT JOIN FriendshipStatus fs on u.id = fs.user_id
+         LEFT JOIN Users uu on.uu.id = fs.friend_id
 WHERE u.id IN
-      (SELECT f.friend_id
-       FROM users uu
-       INNER JOIN FriendshipStatus f ON uu.id = f.user_id
-       WHERE uu.id = 1);
+      (SELECT ffs.friend_id
+       FROM users uuu
+       INNER JOIN FriendshipStatus ffs ON uuu.id = ffs.user_id
+       WHERE uuu.id = 1);
 ```
 7. Получить общих друзей пользователя с ID = 1 и пользователя с ID = 2
 ```sql
@@ -130,9 +153,21 @@ WITH common_friend_ids AS (
     INNER JOIN FriendshipStatus ff ON uu.id = ff.user_id
     WHERE uu.id = 2
 )
-SELECT *
-FROM Users 
-WHERE id IN (SELECT f_id FROM common_friend_ids); 
+SELECT u.id u_id,
+       u.email u_email,
+       u.login u_login,
+       u.name u_name,
+       u.birthday u_bd,
+       uu.id f_id,
+       uu.email f_email,
+       uu.login f_login,
+       uu.name f_name,
+       uu.birthday f_bd
+FROM Users u
+         LEFT JOIN FriendshipStatus fs on u.id = fs.user_id
+         LEFT JOIN Users uu on.uu.id = fs.friend_id
+WHERE u.id IN
+(SELECT f_id FROM common_friend_ids); 
 ```
 8. Пользователь с ID = 1 предлагает пользователю с ID = 2 дружбу:
 ```sql
@@ -141,7 +176,7 @@ VALUES (1, 2);
 ```
 9. Пользователь с ID = 2 одобряет заявку пользователя с ID = 1:
 ```sql
-INSERT INTO FriendshipStatus (user_id, friend_id, status)
+INSERT INTO FriendshipStatus (user_id, friend_id)
 VALUES (2, 1);
 ```
 10. Пользователь с ID = 1 удаляет из друзей пользователя с ID = 2:
@@ -159,4 +194,22 @@ DELETE FROM FilmUserLikes
 WHERE user_id = 1;
 DELETE FROM Users 
 WHERE user_id = 1;
+```
+
+12. Получить пользователя с ID = 1
+```sql
+SELECT u.id u_id,
+       u.email u_email,
+       u.login u_login,
+       u.name u_name,
+       u.birthday u_bd,
+       uu.id f_id,
+       uu.email f_email,
+       uu.login f_login,
+       uu.name f_name,
+       uu.birthday f_bd
+FROM Users u
+         LEFT JOIN FriendshipStatus fs on u.id = fs.user_id
+         LEFT JOIN Users uu on.uu.id = fs.friend_id
+WHERE u.id = 1;
 ```

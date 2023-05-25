@@ -5,8 +5,8 @@ INSERT INTO Genres (name) SELECT 'Триллер' WHERE NOT EXISTS (SELECT name 
 INSERT INTO Genres (name) SELECT 'Документальный' WHERE NOT EXISTS (SELECT name FROM Genres WHERE name = 'Документальный');
 INSERT INTO Genres (name) SELECT 'Боевик' WHERE NOT EXISTS (SELECT name FROM Genres WHERE name = 'Боевик');
 
-INSERT INTO Ratings (rating) SELECT 'G' WHERE NOT EXISTS (SELECT rating FROM Ratings WHERE rating = 'G');
-INSERT INTO Ratings (rating) SELECT 'PG' WHERE NOT EXISTS (SELECT rating FROM Ratings WHERE rating = 'PG');
-INSERT INTO Ratings (rating) SELECT 'PG-13' WHERE NOT EXISTS (SELECT rating FROM Ratings WHERE rating = 'PG-13');
-INSERT INTO Ratings (rating) SELECT 'R' WHERE NOT EXISTS (SELECT rating FROM Ratings WHERE rating = 'R');
-INSERT INTO Ratings (rating) SELECT 'NC-17' WHERE NOT EXISTS (SELECT rating FROM Ratings WHERE rating = 'NC-17');
+INSERT INTO Ratings (name) SELECT 'G' WHERE NOT EXISTS (SELECT name FROM Ratings WHERE name = 'G');
+INSERT INTO Ratings (name) SELECT 'PG' WHERE NOT EXISTS (SELECT name FROM Ratings WHERE name = 'PG');
+INSERT INTO Ratings (name) SELECT 'PG-13' WHERE NOT EXISTS (SELECT name FROM Ratings WHERE name = 'PG-13');
+INSERT INTO Ratings (name) SELECT 'R' WHERE NOT EXISTS (SELECT name FROM Ratings WHERE name = 'R');
+INSERT INTO Ratings (name) SELECT 'NC-17' WHERE NOT EXISTS (SELECT name FROM Ratings WHERE name = 'NC-17');

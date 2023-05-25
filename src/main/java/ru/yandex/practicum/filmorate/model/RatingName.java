@@ -12,9 +12,27 @@ public enum RatingName {
     NC_17("NC-17");
 
     @JsonValue
-    private final String name;
+    private final String rating;
 
-    RatingName(String name) {
-        this.name = name;
+    RatingName(String rating) {
+        this.rating = rating;
+    }
+
+    public static RatingName fromString(String str) {
+        switch (str) {
+            case "G":
+                return G;
+            case "PG":
+                return PG;
+            case "PG-13":
+                return PG_13;
+            case "R":
+                return R;
+            case "NC-17":
+                return NC_17;
+            default:
+                String msg = String.format("Unknown rating: '%s'.", str);
+                throw new IllegalArgumentException(msg);
+        }
     }
 }

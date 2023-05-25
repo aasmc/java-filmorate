@@ -3,13 +3,14 @@ package ru.yandex.practicum.filmorate.storage.inmemory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.storage.RatingStorage;
 import ru.yandex.practicum.filmorate.util.IdGenerator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_RATING_STORAGE;
 
@@ -28,25 +29,19 @@ public class InMemoryRatingStorage implements RatingStorage {
     }
 
     @Override
-    public Rating getById(Long id) {
-        if (ratingNotFound(id)) {
-            String msg = String.format("Rating with ID: %d is not found.", id);
-            throw new ResourceNotFoundException(msg);
-        }
-        return ratingMap.get(id);
+    public Optional<Rating> getById(Long id) {
+        return Optional.ofNullable(ratingMap.get(id));
     }
 
     @Override
     public Rating save(Rating rating) {
-        if (!ratingAlreadyExists(rating)) {
-            rating.setId(idGenerator.nextId());
-            ratingMap.put(rating.getId(), rating);
+        if (ratingAlreadyExists(rating)) {
+            String msg = String.format("Rating already exists: '%s'.", rating.getName().getRating());
+            throw new ResourceAlreadyExistsException(msg);
         }
+        rating.setId(idGenerator.nextId());
+        ratingMap.put(rating.getId(), rating);
         return rating;
-    }
-
-    private boolean ratingNotFound(Long id) {
-        return !ratingMap.containsKey(id);
     }
 
     private boolean ratingAlreadyExists(Rating rating) {

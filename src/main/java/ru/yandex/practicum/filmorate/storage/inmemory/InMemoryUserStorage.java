@@ -24,7 +24,7 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User save(User user) {
-        if (userAlreadyExists(user)) {
+        if (userAlreadyExists(user.getId())) {
             String msg = String.format("User with ID: %d already exists", user.getId());
             throw new ResourceAlreadyExistsException(msg);
         }
@@ -35,7 +35,7 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User update(User user) {
-        if (userNotFound(user)) {
+        if (userNotFound(user.getId())) {
             String msg = String.format("User with ID: %d is not found.", user.getId());
             throw new ResourceNotFoundException(msg);
         }
@@ -79,8 +79,16 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User findUserById(Long id) {
-        return findUserOrThrow(id);
+    public Optional<User> findUserById(Long id) {
+        return Optional.ofNullable(userMap.get(id));
+    }
+
+    @Override
+    public Optional<Long> checkUserId(Long id) {
+        if (userMap.containsKey(id)) {
+            return Optional.of(id);
+        }
+        return Optional.empty();
     }
 
     private User findUserOrThrow(Long userId) {
@@ -100,13 +108,5 @@ public class InMemoryUserStorage implements UserStorage {
     private User findUserOrThrow(Long userId, Supplier<String> msgSupplier) {
         return Optional.ofNullable(userMap.get(userId))
                 .orElseThrow(() -> new ResourceNotFoundException(msgSupplier.get()));
-    }
-
-    private boolean userAlreadyExists(User user) {
-        return user.getId() != null && userMap.containsKey(user.getId());
-    }
-
-    private boolean userNotFound(User user) {
-        return user.getId() == null || !userMap.containsKey(user.getId());
     }
 }

@@ -19,4 +19,23 @@ public enum GenreName {
         this.genre = genre;
     }
 
+    public static GenreName fromString(String str) {
+        switch (str) {
+            case "Драма":
+                return DRAMA;
+            case "Комедия":
+                return COMEDY;
+            case "Триллер":
+                return THRILLER;
+            case "Боевик":
+                return ACTION;
+            case "Документальный":
+                return DOCUMENTARY;
+            case "Мультфильм":
+                return CARTOON;
+            default:
+                String msg = String.format("Unknown Genre: '%s'.", str);
+                throw new IllegalArgumentException(msg);
+        }
+    }
 }
