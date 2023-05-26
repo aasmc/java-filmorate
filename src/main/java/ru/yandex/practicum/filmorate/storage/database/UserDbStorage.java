@@ -43,7 +43,8 @@ public class UserDbStorage implements UserStorage {
 
         User saved = saveUserInternal(user);
         saveUserFriendsInternal(saved);
-        return saved;
+        // return user with all info about him/her
+        return findUserById(saved.getId()).get();
     }
 
     private void saveUserFriendsInternal(User saved) {
@@ -79,7 +80,7 @@ public class UserDbStorage implements UserStorage {
         updateUserInternal(user);
         deleteUserFriendsInternal(user);
         saveUserFriendsInternal(user);
-        return user;
+        return findUserById(user.getId()).get();
     }
 
     private void updateUserInternal(User user) {
