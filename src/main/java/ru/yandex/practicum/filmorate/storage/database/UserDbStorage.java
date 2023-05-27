@@ -1,9 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.database;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
@@ -11,6 +9,9 @@ import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.database.util.ColumnNamesProvider;
+import ru.yandex.practicum.filmorate.storage.database.util.SqlProvider;
+import ru.yandex.practicum.filmorate.storage.database.util.UserColumns;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,13 +29,19 @@ import static ru.yandex.practicum.filmorate.storage.Constants.DB_USER_STORAGE;
 public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final SqlProvider sqlProvider;
+    private final ColumnNamesProvider columnNamesProvider;
     private SimpleJdbcInsert usersJdbcInsert;
 
-    public UserDbStorage(JdbcTemplate jdbcTemplate) {
+    public UserDbStorage(JdbcTemplate jdbcTemplate,
+                         SqlProvider sqlProvider,
+                         ColumnNamesProvider columnNamesProvider) {
         this.jdbcTemplate = jdbcTemplate;
         usersJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("Users")
                 .usingGeneratedKeyColumns("id");
+        this.sqlProvider = sqlProvider;
+        this.columnNamesProvider = columnNamesProvider;
     }
 
     @Override
@@ -48,8 +55,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void saveUserFriendsInternal(User saved) {
-        String sql = "INSERT INTO FriendshipStatus (user_id, friend_id) " +
-                "VALUES (?, ?)";
+        String sql = sqlProvider.provideSaveUserFriendsSql();
         jdbcTemplate.batchUpdate(
                 sql,
                 saved.getFriends(),
@@ -84,8 +90,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void updateUserInternal(User user) {
-        String sql = "UPDATE Users SET email = ?, login = ?, name = ?, birthday = ? " +
-                "WHERE id = ?";
+        String sql = sqlProvider.provideUpdateUserSql();
         jdbcTemplate.update(sql,
                 user.getEmail(),
                 user.getLogin(),
@@ -95,17 +100,13 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void deleteUserFriendsInternal(User user) {
-        String sql = "DELETE FROM FriendshipStatus WHERE user_id = ?";
+        String sql = sqlProvider.provideDeleteUserFriendsSql();
         jdbcTemplate.update(sql, user.getId());
     }
 
     @Override
     public List<User> findAll() {
-        String sql = "select u.id u_id, u.email u_email, u.login u_login, u.name u_name, u.birthday u_bd, " +
-                "uu.id f_id, uu.email f_email, uu.login f_login, uu.name f_name, uu.birthday f_bd from Users u " +
-                "left join FriendshipStatus fs on u.id = fs.user_id " +
-                "left join Users uu on uu.id = fs.friend_id";
-
+        String sql = sqlProvider.provideFindAllUsersSql();
         return selectUsersBySqlInternal(sql);
     }
 
@@ -114,9 +115,7 @@ public class UserDbStorage implements UserStorage {
         throwIfUserNotFound(userId);
         throwIfUserNotFound(newFriendId);
 
-        String sql = "INSERT INTO FriendshipStatus (user_id, friend_id) " +
-                "VALUES (?, ?)";
-
+        String sql = sqlProvider.provideSaveUserFriendsSql();
         jdbcTemplate.update(sql, userId, newFriendId);
     }
 
@@ -125,7 +124,7 @@ public class UserDbStorage implements UserStorage {
         throwIfUserNotFound(userId);
         throwIfUserNotFound(friendId);
 
-        String sql = "DELETE FROM FriendshipStatus WHERE user_id = ? AND friend_id = ?";
+        String sql = sqlProvider.provideDeleteSingleUserFriendSql();
         jdbcTemplate.update(sql, userId, friendId);
     }
 
@@ -133,14 +132,7 @@ public class UserDbStorage implements UserStorage {
     public List<User> getFriends(Long userId) {
         throwIfUserNotFound(userId);
 
-        String sql = "select u.id u_id, u.email u_email, u.login u_login, u.name u_name, u.birthday u_bd, " +
-                "uu.id f_id, uu.email f_email, uu.login f_login, uu.name f_name, uu.birthday f_bd from Users u " +
-                "left join FriendshipStatus fs on u.id = fs.user_id " +
-                "left join Users uu on uu.id = fs.friend_id " +
-                "where u.id in (select ffs.friend_id from Users uuu " +
-                "inner join FriendshipStatus ffs on uuu.id = ffs.user_id " +
-                "where uuu.id = ?)";
-
+        String sql = sqlProvider.provideGetFriendsOfUserSql();
         return selectUsersBySqlInternal(sql, userId);
     }
 
@@ -149,61 +141,19 @@ public class UserDbStorage implements UserStorage {
         throwIfUserNotFound(userId);
         throwIfUserNotFound(friendId);
 
-        String sql = "with common_friend_ids as ( " +
-                "select f.friend_id f_id from Users u " +
-                "inner join FriendshipStatus f on u.id = f.user_id " +
-                "where u.id = ? " +
-                "intersect " +
-                "select ff.friend_id f_id from Users uu " +
-                "inner join FriendshipStatus ff on uu.id = ff.user_id " +
-                "where uu.id = ?) " +
-                "select u.id u_id, u.email u_email, u.login u_login, u.name u_name, u.birthday u_bd, " +
-                "uu.id f_id, uu.email f_email, uu.login f_login, uu.name f_name, uu.birthday f_bd from Users u " +
-                "left join FriendshipStatus fs on u.id = fs.user_id " +
-                "left join Users uu on uu.id = fs.friend_id " +
-                "where u.id in (select f_id from common_friend_ids)";
-
+        String sql = sqlProvider.provideGetCommonFriendsOfUsersSql();
         return selectUsersBySqlInternal(sql, userId, friendId);
     }
 
     @Override
     public Optional<User> findUserById(Long id) {
-        String sql = "select u.email u_email, u.login u_login, u.name u_name, u.birthday u_bd, " +
-                "uu.id f_id, uu.email f_email, uu.login f_login, uu.name f_name, uu.birthday f_bd from Users u " +
-                "left join FriendshipStatus fs on u.id = fs.user_id " +
-                "left join Users uu on uu.id = fs.friend_id " +
-                "where u.id = ?";
+        String sql = sqlProvider.provideFindUserByIdSql();
         User user = jdbcTemplate.query(sql, rs -> {
             User u = null;
             while (rs.next()) {
-                String email = rs.getString("u_email");
-                String login = rs.getString("u_login");
-                String name = rs.getString("u_name");
-                LocalDate birthday = rs.getDate("u_bd").toLocalDate();
-
-                Long friendId = rs.getLong("f_id");
-                User friend = null;
-                if (friendId != 0L) {
-                    String friendEmail = rs.getString("f_email");
-                    String friendLogin = rs.getString("f_login");
-                    String friendName = rs.getString("f_name");
-                    LocalDate friendBd = rs.getDate("f_bd").toLocalDate();
-                    friend = User.builder()
-                            .id(friendId)
-                            .email(friendEmail)
-                            .login(friendLogin)
-                            .name(friendName)
-                            .birthday(friendBd)
-                            .build();
-                }
+                User friend = extractFriend(rs, columnNamesProvider.provideFriendColumns());
                 if (u == null) {
-                    u = User.builder()
-                            .id(id)
-                            .name(name)
-                            .email(email)
-                            .login(login)
-                            .birthday(birthday)
-                            .build();
+                    u = extractUser(rs, columnNamesProvider.provideUserColumns(), id);
                 }
                 if (friend != null) {
                     u.addFriend(friend);
@@ -216,13 +166,47 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Optional<Long> checkUserId(Long id) {
-        String sql = "SELECT id FROM Users WHERE id = ?";
+        String sql = sqlProvider.provideCheckUserIdSql();
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (rowSet.next()) {
             return Optional.of(rowSet.getLong("id"));
         }
         return Optional.empty();
     }
+
+    private User extractUser(ResultSet rs, UserColumns columns, Long id) throws SQLException {
+        String email = rs.getString(columns.getEmail());
+        String login = rs.getString(columns.getLogin());
+        String name = rs.getString(columns.getName());
+        LocalDate birthday = rs.getDate(columns.getBirthday()).toLocalDate();
+        return User.builder()
+                .id(id)
+                .name(name)
+                .email(email)
+                .login(login)
+                .birthday(birthday)
+                .build();
+    }
+
+    private User extractFriend(ResultSet rs, UserColumns columns) throws SQLException {
+        User friend = null;
+        Long friendId = rs.getLong(columns.getId());
+        if (friendId != 0L) {
+            String friendEmail = rs.getString(columns.getEmail());
+            String friendLogin = rs.getString(columns.getLogin());
+            String friendName = rs.getString(columns.getName());
+            LocalDate friendBd = rs.getDate(columns.getBirthday()).toLocalDate();
+            friend = User.builder()
+                    .id(friendId)
+                    .email(friendEmail)
+                    .login(friendLogin)
+                    .name(friendName)
+                    .birthday(friendBd)
+                    .build();
+        }
+        return friend;
+    }
+
 
     private void throwIfUserNotFound(Long userId) {
         if (userNotFound(userId)) {
@@ -239,41 +223,20 @@ public class UserDbStorage implements UserStorage {
     }
 
     private List<User> selectUsersBySqlInternal(String sql, Object... args) {
+        UserColumns userColumns = columnNamesProvider.provideUserColumns();
         return jdbcTemplate.query(sql, rs -> {
             Map<Long, User> idToUser = new HashMap<>();
             while (rs.next()) {
-                Long id = rs.getLong("u_id");
-                String email = rs.getString("u_email");
-                String login = rs.getString("u_login");
-                String name = rs.getString("u_name");
-                LocalDate birthday = rs.getDate("u_bd").toLocalDate();
+                User friend = extractFriend(rs, columnNamesProvider.provideFriendColumns());
 
-                Long friendId = rs.getLong("f_id");
-                User friend = null;
-                if (friendId != 0L) { // check if we have a friend
-                    String friendEmail = rs.getString("f_email");
-                    String friendLogin = rs.getString("f_login");
-                    String friendName = rs.getString("f_name");
-                    LocalDate friendBd = rs.getDate("f_bd").toLocalDate();
-                    friend = User.builder()
-                            .id(friendId)
-                            .email(friendEmail)
-                            .login(friendLogin)
-                            .name(friendName)
-                            .birthday(friendBd)
-                            .build();
+                if (friend != null) {
                     idToUser.put(friend.getId(), friend);
                 }
 
+                Long id = rs.getLong(userColumns.getId());
                 User user = idToUser.get(id);
                 if (user == null) { // first time we see the user
-                    user = User.builder()
-                            .id(id)
-                            .name(name)
-                            .email(email)
-                            .login(login)
-                            .birthday(birthday)
-                            .build();
+                    user = extractUser(rs, userColumns, id);
                     idToUser.put(user.getId(), user);
                 }
                 if (friend != null) {

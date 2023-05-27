@@ -11,8 +11,7 @@ import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.Constants;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
-import ru.yandex.practicum.filmorate.storage.database.util.FilmColumns;
-import ru.yandex.practicum.filmorate.storage.database.util.UserColumns;
+import ru.yandex.practicum.filmorate.storage.database.util.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,16 +27,23 @@ import static ru.yandex.practicum.filmorate.storage.Constants.DB_FILM_STORAGE;
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ColumnNamesProvider columnNamesProvider;
+    private final SqlProvider sqlProvider;
     private final UserStorage userStorage;
+
     private SimpleJdbcInsert filmsJdbcInsert;
 
     public FilmDbStorage(JdbcTemplate jdbcTemplate,
+                         ColumnNamesProvider columnNamesProvider,
+                         SqlProvider sqlProvider,
                          @Qualifier(Constants.DB_USER_STORAGE) UserStorage userStorage) {
         this.jdbcTemplate = jdbcTemplate;
         filmsJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("Films")
                 .usingGeneratedKeyColumns("id");
+        this.columnNamesProvider = columnNamesProvider;
         this.userStorage = userStorage;
+        this.sqlProvider = sqlProvider;
     }
 
     @Override
@@ -63,146 +69,17 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findAll() {
-        String sql = "SELECT f.id film_id, " +
-                "f.name film_name, " +
-                "f.description film_descr, " +
-                "f.release_date film_rel_d, " +
-                "f.duration film_dur, " +
-                "r.id mpa_id, " +
-                "r.name mpa, " +
-                "g.id genre_id, " +
-                "g.name genre, " +
-                "u.id u_id, " +
-                "u.email u_email, " +
-                "u.login u_login, " +
-                "u.name u_name, " +
-                "u.birthday u_bd, " +
-                "uu.id f_id, " +
-                "uu.email f_email, " +
-                "uu.login f_login, " +
-                "uu.name f_name, " +
-                "uu.birthday f_bd, " +
-                "FROM Films f " +
-                "LEFT JOIN Ratings r ON f.rating_id = r.id " +
-                "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
-                "LEFT JOIN Genres g ON g.id = fg.genre_id " +
-                "LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id " +
-                "LEFT JOIN Users u ON u.id = ful.user_id " +
-                "LEFT JOIN FriendshipStatus fs ON u.id = fs.user_id " +
-                "LEFT JOIN Users uu ON uu.id = fs.friend_id";
-
+        String sql = sqlProvider.provideFilmFindAllSql();
         return selectFilmsBySqlInternal(sql);
     }
 
-    private List<Film> selectFilmsBySqlInternal(String sql, Object... args) {
-        return jdbcTemplate.query(sql, rs -> {
-            Map<Long, Film> idToFilm = new HashMap<>();
-            Map<Long, User> idToUser = new HashMap<>();
-            Map<Long, Genre> idToGenre = new HashMap<>();
-            Rating rating = null;
-            while (rs.next()) {
-
-                if (rating == null) {
-                    rating = extractRating(rs);
-                }
-
-                Long genreId = rs.getLong("genre_id");
-                Genre genre = null;
-                if (genreId != 0) {
-                    genre = idToGenre.get(genreId);
-                    if (genre == null) {
-                        String genreName = rs.getString("genre");
-                        genre = Genre.builder()
-                                .id(genreId)
-                                .name(GenreName.fromString(genreName))
-                                .build();
-                        idToGenre.put(genreId, genre);
-                    }
-                }
-
-                Long uId = rs.getLong("u_id");
-
-                User user = null;
-                if (uId != 0L) {
-                    user = idToUser.get(uId);
-                    if (user == null) { // first time we see the user
-                        String uEmail = rs.getString("u_email");
-                        String uLogin = rs.getString("u_login");
-                        String uName = rs.getString("u_name");
-                        LocalDate uBirthday = rs.getDate("u_bd").toLocalDate();
-                        user = User.builder()
-                                .id(uId)
-                                .name(uName)
-                                .email(uEmail)
-                                .login(uLogin)
-                                .birthday(uBirthday)
-                                .build();
-                        idToUser.put(user.getId(), user);
-                    }
-                }
-
-                Long friendId = rs.getLong("f_id");
-                User friend = null;
-                if (friendId != 0L) { // check if we have a friend
-                    friend = idToUser.get(friendId);
-                    if (friend == null) {
-                        String friendEmail = rs.getString("f_email");
-                        String friendLogin = rs.getString("f_login");
-                        String friendName = rs.getString("f_name");
-                        LocalDate friendBd = rs.getDate("f_bd").toLocalDate();
-                        friend = User.builder()
-                                .id(friendId)
-                                .email(friendEmail)
-                                .login(friendLogin)
-                                .name(friendName)
-                                .birthday(friendBd)
-                                .build();
-                        idToUser.put(friendId, friend);
-                    }
-                }
-
-                if (friend != null && user != null) {
-                    user.addFriend(friend);
-                }
-
-                Long filmId = rs.getLong("film_id");
-                String filmName = rs.getString("film_name");
-                String description = rs.getString("film_descr");
-                LocalDate releaseDate = rs.getDate("film_rel_d").toLocalDate();
-                long duration = rs.getLong("film_dur");
-                Film film = idToFilm.get(filmId);
-
-                if (film == null) {
-                    film = Film.builder()
-                            .id(filmId)
-                            .name(filmName)
-                            .description(description)
-                            .releaseDate(releaseDate)
-                            .duration(duration)
-                            .build();
-                    // set rating only once since it is one-to-one
-                    if (rating != null) {
-                        film.setMpa(rating);
-                    }
-                    idToFilm.put(filmId, film);
-                }
-                if (genre != null) {
-                    film.getGenres().add(genre);
-                }
-                if (user != null) {
-                    film.getUserLikes().add(user);
-                }
-            }
-            return List.copyOf(idToFilm.values());
-        }, args);
-    }
 
     @Override
     public void addUserLikeToFilm(Long userId, Long filmId) {
         throwIfFilmNotFound(filmId);
         throwIfUserNotFound(userId);
 
-        String sql = "INSERT INTO FilmUserLikes (film_id, user_id) VALUES (?, ?)";
+        String sql = sqlProvider.provideAddUserLikesToFilmSql();
         jdbcTemplate.update(sql, filmId, userId);
     }
 
@@ -211,82 +88,19 @@ public class FilmDbStorage implements FilmStorage {
         throwIfUserNotFound(userId);
         throwIfFilmNotFound(filmId);
 
-        String sql = "DELETE FROM FilmUserLikes WHERE film_id = ? AND user_id = ?";
+        String sql = sqlProvider.provideRemoveSingleUserLikeForFilmSql();
         jdbcTemplate.update(sql, filmId, userId);
     }
 
     @Override
     public List<Film> getMostPopularFilms(long count) {
-        String sql = "WITH top_id_to_count AS ( " +
-                "SELECT ff.id t_id, " +
-                "COUNT(ful.film_id) cnt " +
-                "FROM Films ff " +
-                "LEFT JOIN FilmUserLikes ful ON ff.id = ful.film_id " +
-                "GROUP BY t_id " +
-                "ORDER BY cnt DESC " +
-                "LIMIT ?" +
-                ") " +
-                "SELECT f.id film_id, " +
-                "f.name f_name, " +
-                "f.description f_descr, " +
-                "f.release_date f_rel_d, " +
-                "f.duration f_dur, " +
-                "r.id mpa_id, " +
-                "r.name mpa, " +
-                "g.id genre_id, " +
-                "g.name genre, " +
-                "u.id u_id, " +
-                "u.email u_email, " +
-                "u.login u_login, " +
-                "u.name u_name, " +
-                "u.birthday u_bd, " +
-                "uu.id f_id, " +
-                "uu.email f_email, " +
-                "uu.login f_login, " +
-                "uu.name f_name, " +
-                "uu.birthday f_bd, " +
-                "FROM Films f " +
-                "LEFT JOIN Ratings r ON f.rating_id = r.id " +
-                "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
-                "LEFT JOIN Genres g ON g.id = fg.genre_id " +
-                "LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id " +
-                "LEFT JOIN Users u ON u.id = ful.user_id " +
-                "LEFT JOIN FriendshipStatus fs ON u.id = fs.user_id " +
-                "LEFT JOIN Users uu ON uu.id = fs.friend_id " +
-                "WHERE f.id IN (SELECT t_id FROM top_id_to_count)";
+        String sql = sqlProvider.provideMostPopularFilmsSql();
         return selectFilmsBySqlInternal(sql, count);
     }
 
     @Override
     public Optional<Film> findFilmById(Long filmId) {
-        String sql = "SELECT f.id film_id" +
-                "f.name film_name, " +
-                "f.description film_descr, " +
-                "f.release_date film_rel_d, " +
-                "f.duration film_dur, " +
-                "r.id mpa_id, " +
-                "r.name mpa, " +
-                "g.id genre_id, " +
-                "g.name genre, " +
-                "u.id u_id, " +
-                "u.email u_email, " +
-                "u.login u_login, " +
-                "u.name u_name, " +
-                "u.birthday u_bd, " +
-                "uu.id f_id, " +
-                "uu.email f_email, " +
-                "uu.login f_login, " +
-                "uu.name f_name, " +
-                "uu.birthday f_bd, " +
-                "FROM Films f " +
-                "LEFT JOIN Ratings r ON f.rating_id = r.id " +
-                "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
-                "LEFT JOIN Genres g ON g.id = fg.genre_id " +
-                "LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id " +
-                "LEFT JOIN Users u ON u.id = ful.user_id " +
-                "LEFT JOIN FriendshipStatus fs ON u.id = fs.user_id " +
-                "LEFT JOIN Users uu ON uu.id = fs.friend_id " +
-                "WHERE f.id = ?";
+        String sql = sqlProvider.provideFindFilmByIdSql();
 
         Film film = jdbcTemplate.query(sql, rs -> {
             Film extractedFilm = null;
@@ -296,29 +110,30 @@ public class FilmDbStorage implements FilmStorage {
             while (rs.next()) {
 
                 if (rating == null) {
-                    rating = extractRating(rs);
+                    rating = extractRating(rs, columnNamesProvider.provideRatingColumns());
                 }
-
-                extractGenreAndSaveToMap(rs, idToGenre);
-                UserColumns columns = getUserColumns();
+                GenreColumns genreColumns = columnNamesProvider.provideGenreColumns();
+                extractGenreAndSaveToMap(rs, idToGenre, genreColumns);
+                UserColumns columns = columnNamesProvider.provideUserColumns();
                 User user = extractUserAndSaveToMap(rs, idToUser, columns);
 
-                UserColumns friendColumns = getFriendColumns();
+                UserColumns friendColumns = columnNamesProvider.provideFriendColumns();
                 User friend = extractUserAndSaveToMap(rs, idToUser, friendColumns);
 
                 if (friend != null && user != null) {
                     user.addFriend(friend);
                 }
 
+                FilmColumns filmColumns = columnNamesProvider.provideFilmColumns();
                 if (extractedFilm == null) {
-                    extractedFilm = extractFilm(rs, getFilmColumns());
+                    extractedFilm = extractFilm(rs, filmColumns, filmId);
                 }
             }
 
             if (extractedFilm != null) {
                 List<Genre> genres = getUniqueGenresSortedById(idToGenre);
                 extractedFilm.setGenres(genres);
-                Set<User> userLikes = getNonNullUsers(idToUser);
+                Set<User> userLikes = filterNonNullUniqueUsers(idToUser);
                 extractedFilm.setUserLikes(userLikes);
                 if (rating != null) {
                     extractedFilm.setMpa(rating);
@@ -330,7 +145,18 @@ public class FilmDbStorage implements FilmStorage {
         return Optional.ofNullable(film);
     }
 
-    private Set<User> getNonNullUsers(Map<Long, User> idToUser) {
+    @Override
+    public Optional<Long> checkFilmId(Long id) {
+        String sql = sqlProvider.provideCheckFilmIdSql();
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
+        if (rowSet.next()) {
+            return Optional.of(rowSet.getLong("id"));
+        }
+        return Optional.empty();
+    }
+
+
+    private Set<User> filterNonNullUniqueUsers(Map<Long, User> idToUser) {
         return idToUser.values().stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -344,8 +170,7 @@ public class FilmDbStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
-    private Film extractFilm(ResultSet rs, FilmColumns columns) throws SQLException {
-        Long id = rs.getLong(columns.getId());
+    private Film extractFilm(ResultSet rs, FilmColumns columns, Long id) throws SQLException {
         String filmName = rs.getString(columns.getName());
         String description = rs.getString(columns.getDescr());
         LocalDate releaseDate = rs.getDate(columns.getReleaseDate()).toLocalDate();
@@ -360,41 +185,11 @@ public class FilmDbStorage implements FilmStorage {
     }
 
 
-    private FilmColumns getFilmColumns() {
-        return FilmColumns.builder()
-                .id("film_id")
-                .name("film_name")
-                .descr("film_descr")
-                .releaseDate("film_rel_d")
-                .duration("film_dur")
-                .build();
-    }
-
-    private UserColumns getUserColumns() {
-        return UserColumns.builder()
-                .id("u_id")
-                .email("u_email")
-                .login("u_login")
-                .name("u_name")
-                .birthday("u_bd")
-                .build();
-    }
-
-    private UserColumns getFriendColumns() {
-        return UserColumns.builder()
-                .id("f_id")
-                .email("f_email")
-                .login("f_login")
-                .name("f_name")
-                .birthday("f_bd")
-                .build();
-    }
-
-    private Rating extractRating(ResultSet rs) throws SQLException {
+    private Rating extractRating(ResultSet rs, RatingColumns columns) throws SQLException {
         Rating rating = null;
-        Long mpaId = rs.getLong("mpa_id");
+        Long mpaId = rs.getLong(columns.getId());
         if (mpaId != 0) {
-            String mpa = rs.getString("mpa");
+            String mpa = rs.getString(columns.getName());
             rating = Rating.builder()
                     .id(mpaId)
                     .name(RatingName.fromString(mpa))
@@ -429,12 +224,15 @@ public class FilmDbStorage implements FilmStorage {
     }
 
 
-    private void extractGenreAndSaveToMap(ResultSet rs, Map<Long, Genre> idToGenre) throws SQLException {
-        Long genreId = rs.getLong("genre_id");
+    private Genre extractGenreAndSaveToMap(ResultSet rs,
+                                           Map<Long, Genre> idToGenre,
+                                           GenreColumns columns) throws SQLException {
+        Genre genre = null;
+        Long genreId = rs.getLong(columns.getId());
         if (genreId != 0) {
-            Genre genre = idToGenre.get(genreId);
+            genre = idToGenre.get(genreId);
             if (genre == null) {
-                String genreName = rs.getString("genre");
+                String genreName = rs.getString(columns.getName());
                 genre = Genre.builder()
                         .id(genreId)
                         .name(GenreName.fromString(genreName))
@@ -442,17 +240,9 @@ public class FilmDbStorage implements FilmStorage {
                 idToGenre.put(genreId, genre);
             }
         }
+        return genre;
     }
 
-    @Override
-    public Optional<Long> checkFilmId(Long id) {
-        String sql = "SELECT id FROM Films WHERE id = ?";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
-        if (rowSet.next()) {
-            return Optional.of(rowSet.getLong("id"));
-        }
-        return Optional.empty();
-    }
 
     private void throwIfFilmNotFound(Long filmId) {
         if (filmNotFound(filmId)) {
@@ -480,8 +270,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void updateFilmInternal(Film film) {
-        String sql = "UPDATE Films SET name = ?, description = ?, release_date = ?, " +
-                "duration = ?, rating_id = ? WHERE id = ?";
+        String sql = sqlProvider.provideUpdateFilmSql();
         jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
@@ -496,7 +285,7 @@ public class FilmDbStorage implements FilmStorage {
             List<Genre> genres = saved.getGenres().stream()
                     .distinct()
                     .collect(Collectors.toList());
-            String sql = "INSERT INTO FilmGenre (film_id, genre_id) VALUES (?, ?)";
+            String sql = sqlProvider.provideSaveFilmGenresSql();
             jdbcTemplate.batchUpdate(
                     sql,
                     genres,
@@ -515,7 +304,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private void saveFilmUserLikesInternal(Film saved) {
         if (filmHasUserLikes(saved)) {
-            String sql = "INSERT INTO FilmUserLikes (film_id, user_id) VALUES (?, ?)";
+            String sql = sqlProvider.provideAddUserLikesToFilmSql();
             jdbcTemplate.batchUpdate(
                     sql,
                     saved.getUserLikes(),
@@ -547,12 +336,55 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void deleteFilmUserLikesInternal(Film film) {
-        String sql = "DELETE FROM FilmUserLikes WHERE film_id = ?";
+        String sql = sqlProvider.provideRemoveAllUserLikesForFilmSql();
         jdbcTemplate.update(sql, film.getId());
     }
 
     private void deleteFilmGenresInternal(Film film) {
-        String sql = "DELETE FROM FilmGenre WHERE film_id = ?";
+        String sql = sqlProvider.provideDeleteFilmGenresSql();
         jdbcTemplate.update(sql, film.getId());
+    }
+
+    private List<Film> selectFilmsBySqlInternal(String sql, Object... args) {
+        return jdbcTemplate.query(sql, rs -> {
+            Map<Long, Film> idToFilm = new HashMap<>();
+            Map<Long, User> idToUser = new HashMap<>();
+            Map<Long, Genre> idToGenre = new HashMap<>();
+            while (rs.next()) {
+                Rating rating = extractRating(rs, columnNamesProvider.provideRatingColumns());
+
+                GenreColumns genreColumns = columnNamesProvider.provideGenreColumns();
+                Genre genre = extractGenreAndSaveToMap(rs, idToGenre, genreColumns);
+
+                UserColumns userColumns = columnNamesProvider.provideUserColumns();
+                User user = extractUserAndSaveToMap(rs, idToUser, userColumns);
+
+                UserColumns friendColumns = columnNamesProvider.provideFriendColumns();
+                User friend = extractUserAndSaveToMap(rs, idToUser, friendColumns);
+
+                if (friend != null && user != null) {
+                    user.addFriend(friend);
+                }
+
+                FilmColumns filmColumns = columnNamesProvider.provideFilmColumns();
+                Long filmId = rs.getLong(filmColumns.getId());
+                Film film = idToFilm.get(filmId);
+                if (film == null) {
+                    film = extractFilm(rs, filmColumns, filmId);
+                    // set rating only once since it is one-to-one
+                    if (rating != null) {
+                        film.setMpa(rating);
+                    }
+                    idToFilm.put(filmId, film);
+                }
+                if (genre != null) {
+                    film.getGenres().add(genre);
+                }
+                if (user != null) {
+                    film.getUserLikes().add(user);
+                }
+            }
+            return List.copyOf(idToFilm.values());
+        }, args);
     }
 }
