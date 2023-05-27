@@ -48,8 +48,8 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void saveUserFriendsInternal(User saved) {
-        String sql = "insert into FriendshipStatus (user_id, friend_id) " +
-                "values (?, ?)";
+        String sql = "INSERT INTO FriendshipStatus (user_id, friend_id) " +
+                "VALUES (?, ?)";
         jdbcTemplate.batchUpdate(
                 sql,
                 saved.getFriends(),
@@ -84,8 +84,8 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void updateUserInternal(User user) {
-        String sql = "update Users set email = ?, login = ?, name = ?, birthday = ? " +
-                "where id = ?";
+        String sql = "UPDATE Users SET email = ?, login = ?, name = ?, birthday = ? " +
+                "WHERE id = ?";
         jdbcTemplate.update(sql,
                 user.getEmail(),
                 user.getLogin(),
@@ -95,7 +95,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void deleteUserFriendsInternal(User user) {
-        String sql = "delete from FriendshipStatus where user_id = ?";
+        String sql = "DELETE FROM FriendshipStatus WHERE user_id = ?";
         jdbcTemplate.update(sql, user.getId());
     }
 
@@ -114,8 +114,8 @@ public class UserDbStorage implements UserStorage {
         throwIfUserNotFound(userId);
         throwIfUserNotFound(newFriendId);
 
-        String sql = "insert into FriendshipStatus (user_id, friend_id) " +
-                "values (?, ?)";
+        String sql = "INSERT INTO FriendshipStatus (user_id, friend_id) " +
+                "VALUES (?, ?)";
 
         jdbcTemplate.update(sql, userId, newFriendId);
     }
@@ -125,7 +125,7 @@ public class UserDbStorage implements UserStorage {
         throwIfUserNotFound(userId);
         throwIfUserNotFound(friendId);
 
-        String sql = "delete from FriendshipStatus where user_id = ? and friend_id = ?";
+        String sql = "DELETE FROM FriendshipStatus WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
@@ -216,7 +216,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Optional<Long> checkUserId(Long id) {
-        String sql = "select id from Users where id = ?";
+        String sql = "SELECT id FROM Users WHERE id = ?";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (rowSet.next()) {
             return Optional.of(rowSet.getLong("id"));
