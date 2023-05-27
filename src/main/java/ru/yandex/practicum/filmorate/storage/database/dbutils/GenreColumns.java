@@ -1,11 +1,11 @@
-package ru.yandex.practicum.filmorate.storage.database.util;
+package ru.yandex.practicum.filmorate.storage.database.dbutils;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class RatingColumns {
+public class GenreColumns {
     private String id;
     private String name;
 }

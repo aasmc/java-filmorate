@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.GenreName;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.SqlProvider;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,24 +25,26 @@ import static ru.yandex.practicum.filmorate.storage.Constants.DB_GENRE_STORAGE;
 public class GenreDbStorage implements GenreStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final SqlProvider sqlProvider;
     private SimpleJdbcInsert simpleJdbcInsert;
 
-    public GenreDbStorage(JdbcTemplate jdbcTemplate) {
+    public GenreDbStorage(JdbcTemplate jdbcTemplate, SqlProvider sqlProvider) {
         this.jdbcTemplate = jdbcTemplate;
         simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("Genres")
                 .usingGeneratedKeyColumns("id");
+        this.sqlProvider = sqlProvider;
     }
 
     @Override
     public List<Genre> findAll() {
-        String sql = "select * from Genres";
+        String sql = sqlProvider.provideFindAllGenresSql();
         return jdbcTemplate.query(sql, (rs, rowNum) -> makeGenre(rs));
     }
 
     @Override
     public Optional<Genre> getById(Long id) {
-        String sql = "select * from Genres where id = ?";
+        String sql = sqlProvider.provideFindGenreByIdSql();
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (rowSet.next()) {
              return Optional.of(Genre.builder()

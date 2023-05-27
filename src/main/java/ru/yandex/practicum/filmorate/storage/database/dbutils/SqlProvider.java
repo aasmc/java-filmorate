@@ -1,9 +1,25 @@
-package ru.yandex.practicum.filmorate.storage.database.util;
+package ru.yandex.practicum.filmorate.storage.database.dbutils;
 
 import org.springframework.stereotype.Component;
 
 @Component
 public class SqlProvider {
+
+    public String provideFindRatingByIdSql() {
+        return "SELECT * FROM Ratings WHERE id = ?";
+    }
+
+    public String provideFindAllRatingsSql() {
+        return "SELECT * FROM Ratings";
+    }
+
+    public String provideFindGenreByIdSql() {
+        return "SELECT * FROM Genres WHERE id = ?";
+    }
+
+    public String provideFindAllGenresSql() {
+        return "SELECT * FROM Genres";
+    }
 
     public String provideCheckUserIdSql() {
         return "SELECT id FROM Users WHERE id = ?";

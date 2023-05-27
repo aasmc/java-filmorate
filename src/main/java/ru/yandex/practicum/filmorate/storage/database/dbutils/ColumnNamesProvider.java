@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.database.util;
+package ru.yandex.practicum.filmorate.storage.database.dbutils;
 
 import org.springframework.stereotype.Component;
 

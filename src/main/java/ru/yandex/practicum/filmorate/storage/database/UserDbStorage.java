@@ -9,9 +9,9 @@ import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
-import ru.yandex.practicum.filmorate.storage.database.util.ColumnNamesProvider;
-import ru.yandex.practicum.filmorate.storage.database.util.SqlProvider;
-import ru.yandex.practicum.filmorate.storage.database.util.UserColumns;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.ColumnNamesProvider;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.SqlProvider;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.UserColumns;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

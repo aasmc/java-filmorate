@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.RatingName;
 import ru.yandex.practicum.filmorate.storage.RatingStorage;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.SqlProvider;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,24 +25,26 @@ import static ru.yandex.practicum.filmorate.storage.Constants.DB_RATING_STORAGE;
 public class RatingDbStorage implements RatingStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final SqlProvider sqlProvider;
     private SimpleJdbcInsert simpleJdbcInsert;
 
-    public RatingDbStorage(JdbcTemplate jdbcTemplate) {
+    public RatingDbStorage(JdbcTemplate jdbcTemplate, SqlProvider sqlProvider) {
         this.jdbcTemplate = jdbcTemplate;
         simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("Ratings")
                 .usingGeneratedKeyColumns("id");
+        this.sqlProvider = sqlProvider;
     }
 
     @Override
     public List<Rating> findAll() {
-        String sql = "select * from Ratings";
+        String sql = sqlProvider.provideFindAllRatingsSql();
         return jdbcTemplate.query(sql, (rs, rowNum) -> makeRating(rs));
     }
 
     @Override
     public Optional<Rating> getById(Long id) {
-        String sql = "select * from Ratings where id = ?";
+        String sql = sqlProvider.provideFindRatingByIdSql();
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (rowSet.next()) {
             return Optional.of(Rating.builder()

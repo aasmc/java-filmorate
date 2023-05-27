@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.Constants;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
-import ru.yandex.practicum.filmorate.storage.database.util.*;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
