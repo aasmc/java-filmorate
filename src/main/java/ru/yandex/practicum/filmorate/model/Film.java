@@ -46,17 +46,17 @@ public class Film {
     private List<Genre> genres = new ArrayList<>();
 
     @Builder.Default
-    private Set<User> userLikes = new HashSet<>();
+    private Set<Long> userLikes = new HashSet<>();
 
     public int getLikesCount() {
         return userLikes.size();
     }
 
-    public void addUserLike(User user) {
-        userLikes.add(user);
+    public void addUserLike(Long userId) {
+        userLikes.add(userId);
     }
 
-    public void removeUserLike(User user) {
-        userLikes.remove(user);
+    public void removeUserLike(Long userId) {
+        userLikes.remove(userId);
     }
 }

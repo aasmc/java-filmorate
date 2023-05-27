@@ -104,25 +104,18 @@ public class FilmDbStorage implements FilmStorage {
 
         Film film = jdbcTemplate.query(sql, rs -> {
             Film extractedFilm = null;
-            Map<Long, User> idToUser = new HashMap<>();
+            Set<Long> userIds = new HashSet<>();
             Map<Long, Genre> idToGenre = new HashMap<>();
             Rating rating = null;
             while (rs.next()) {
-
                 if (rating == null) {
                     rating = extractRating(rs, columnNamesProvider.provideRatingColumns());
                 }
                 GenreColumns genreColumns = columnNamesProvider.provideGenreColumns();
                 extractGenreAndSaveToMap(rs, idToGenre, genreColumns);
+
                 UserColumns columns = columnNamesProvider.provideUserColumns();
-                User user = extractUserAndSaveToMap(rs, idToUser, columns);
-
-                UserColumns friendColumns = columnNamesProvider.provideFriendColumns();
-                User friend = extractUserAndSaveToMap(rs, idToUser, friendColumns);
-
-                if (friend != null && user != null) {
-                    user.addFriend(friend);
-                }
+                extractUserIdAndSaveToSet(rs, userIds, columns);
 
                 FilmColumns filmColumns = columnNamesProvider.provideFilmColumns();
                 if (extractedFilm == null) {
@@ -133,8 +126,7 @@ public class FilmDbStorage implements FilmStorage {
             if (extractedFilm != null) {
                 List<Genre> genres = getUniqueGenresSortedById(idToGenre);
                 extractedFilm.setGenres(genres);
-                Set<User> userLikes = filterNonNullUniqueUsers(idToUser);
-                extractedFilm.setUserLikes(userLikes);
+                extractedFilm.setUserLikes(userIds);
                 if (rating != null) {
                     extractedFilm.setMpa(rating);
                 }
@@ -153,13 +145,6 @@ public class FilmDbStorage implements FilmStorage {
             return Optional.of(rowSet.getLong("id"));
         }
         return Optional.empty();
-    }
-
-
-    private Set<User> filterNonNullUniqueUsers(Map<Long, User> idToUser) {
-        return idToUser.values().stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
     }
 
     private List<Genre> getUniqueGenresSortedById(Map<Long, Genre> idToGenre) {
@@ -198,31 +183,14 @@ public class FilmDbStorage implements FilmStorage {
         return rating;
     }
 
-    private User extractUserAndSaveToMap(ResultSet rs,
-                                         Map<Long, User> idToUser,
-                                         UserColumns columns) throws SQLException {
-        User user = null;
-        Long uId = rs.getLong(columns.getId());
-        if (uId != 0L) {
-            user = idToUser.get(uId);
-            if (user == null) { // first time we see the user
-                String uEmail = rs.getString(columns.getEmail());
-                String uLogin = rs.getString(columns.getLogin());
-                String uName = rs.getString(columns.getName());
-                LocalDate uBirthday = rs.getDate(columns.getBirthday()).toLocalDate();
-                user = User.builder()
-                        .id(uId)
-                        .name(uName)
-                        .email(uEmail)
-                        .login(uLogin)
-                        .birthday(uBirthday)
-                        .build();
-                idToUser.put(user.getId(), user);
-            }
+    private void extractUserIdAndSaveToSet(ResultSet rs,
+                                           Set<Long> userIds,
+                                           UserColumns columns) throws SQLException {
+        Long userId = rs.getLong(columns.getId());
+        if (userId != 0) {
+            userIds.add(userId);
         }
-        return user;
     }
-
 
     private Genre extractGenreAndSaveToMap(ResultSet rs,
                                            Map<Long, Genre> idToGenre,
@@ -309,9 +277,9 @@ public class FilmDbStorage implements FilmStorage {
                     sql,
                     saved.getUserLikes(),
                     saved.getUserLikes().size(),
-                    (PreparedStatement ps, User u) -> {
+                    (PreparedStatement ps, Long uId) -> {
                         ps.setLong(1, saved.getId());
-                        ps.setLong(2, u.getId());
+                        ps.setLong(2, uId);
                     }
             );
         }
@@ -348,7 +316,6 @@ public class FilmDbStorage implements FilmStorage {
     private List<Film> selectFilmsBySqlInternal(String sql, Object... args) {
         return jdbcTemplate.query(sql, rs -> {
             Map<Long, Film> idToFilm = new HashMap<>();
-            Map<Long, User> idToUser = new HashMap<>();
             Map<Long, Genre> idToGenre = new HashMap<>();
             while (rs.next()) {
                 Rating rating = extractRating(rs, columnNamesProvider.provideRatingColumns());
@@ -357,14 +324,7 @@ public class FilmDbStorage implements FilmStorage {
                 Genre genre = extractGenreAndSaveToMap(rs, idToGenre, genreColumns);
 
                 UserColumns userColumns = columnNamesProvider.provideUserColumns();
-                User user = extractUserAndSaveToMap(rs, idToUser, userColumns);
-
-                UserColumns friendColumns = columnNamesProvider.provideFriendColumns();
-                User friend = extractUserAndSaveToMap(rs, idToUser, friendColumns);
-
-                if (friend != null && user != null) {
-                    user.addFriend(friend);
-                }
+                Long userId = extractUserId(rs, userColumns);
 
                 FilmColumns filmColumns = columnNamesProvider.provideFilmColumns();
                 Long filmId = rs.getLong(filmColumns.getId());
@@ -380,11 +340,16 @@ public class FilmDbStorage implements FilmStorage {
                 if (genre != null) {
                     film.getGenres().add(genre);
                 }
-                if (user != null) {
-                    film.getUserLikes().add(user);
+                if (userId != null) {
+                    film.addUserLike(userId);
                 }
             }
             return List.copyOf(idToFilm.values());
         }, args);
+    }
+
+    private Long extractUserId(ResultSet rs, UserColumns userColumns) throws SQLException {
+        Long userId = rs.getLong(userColumns.getId());
+        return userId != 0 ? userId : null;
     }
 }

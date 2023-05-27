@@ -65,14 +65,14 @@ public class InMemoryFilmStorage implements FilmStorage {
     public void addUserLikeToFilm(Long userId, Long filmId) {
         Film film = findFilmOrThrow(filmId);
         User user = findUserOrThrow(userId);
-        film.addUserLike(user);
+        film.addUserLike(user.getId());
     }
 
     @Override
     public void removeUserLike(Long userId, Long filmId) {
         Film film = findFilmOrThrow(filmId);
         User user = findUserOrThrow(userId);
-        film.removeUserLike(user);
+        film.removeUserLike(user.getId());
     }
 
     @Override

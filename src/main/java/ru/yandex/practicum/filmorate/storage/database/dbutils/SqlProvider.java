@@ -145,23 +145,12 @@ public class SqlProvider {
                 "g.id genre_id, " +
                 "g.name genre, " +
                 "u.id u_id, " +
-                "u.email u_email, " +
-                "u.login u_login, " +
-                "u.name u_name, " +
-                "u.birthday u_bd, " +
-                "uu.id f_id, " +
-                "uu.email f_email, " +
-                "uu.login f_login, " +
-                "uu.name f_name, " +
-                "uu.birthday f_bd, " +
                 "FROM Films f " +
                 "LEFT JOIN Ratings r ON f.rating_id = r.id " +
                 "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
                 "LEFT JOIN Genres g ON g.id = fg.genre_id " +
                 "LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id " +
                 "LEFT JOIN Users u ON u.id = ful.user_id " +
-                "LEFT JOIN FriendshipStatus fs ON u.id = fs.user_id " +
-                "LEFT JOIN Users uu ON uu.id = fs.friend_id " +
                 "WHERE f.id = ?";
     }
 
@@ -185,23 +174,12 @@ public class SqlProvider {
                 "g.id genre_id, " +
                 "g.name genre, " +
                 "u.id u_id, " +
-                "u.email u_email, " +
-                "u.login u_login, " +
-                "u.name u_name, " +
-                "u.birthday u_bd, " +
-                "uu.id f_id, " +
-                "uu.email f_email, " +
-                "uu.login f_login, " +
-                "uu.name f_name, " +
-                "uu.birthday f_bd, " +
                 "FROM Films f " +
                 "LEFT JOIN Ratings r ON f.rating_id = r.id " +
                 "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
                 "LEFT JOIN Genres g ON g.id = fg.genre_id " +
                 "LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id " +
                 "LEFT JOIN Users u ON u.id = ful.user_id " +
-                "LEFT JOIN FriendshipStatus fs ON u.id = fs.user_id " +
-                "LEFT JOIN Users uu ON uu.id = fs.friend_id " +
                 "WHERE f.id IN (SELECT t_id FROM top_id_to_count)";
     }
 
@@ -228,22 +206,11 @@ public class SqlProvider {
                 "g.id genre_id, " +
                 "g.name genre, " +
                 "u.id u_id, " +
-                "u.email u_email, " +
-                "u.login u_login, " +
-                "u.name u_name, " +
-                "u.birthday u_bd, " +
-                "uu.id f_id, " +
-                "uu.email f_email, " +
-                "uu.login f_login, " +
-                "uu.name f_name, " +
-                "uu.birthday f_bd, " +
                 "FROM Films f " +
                 "LEFT JOIN Ratings r ON f.rating_id = r.id " +
                 "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
                 "LEFT JOIN Genres g ON g.id = fg.genre_id " +
                 "LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id " +
-                "LEFT JOIN Users u ON u.id = ful.user_id " +
-                "LEFT JOIN FriendshipStatus fs ON u.id = fs.user_id " +
-                "LEFT JOIN Users uu ON uu.id = fs.friend_id";
+                "LEFT JOIN Users u ON u.id = ful.user_id ";
     }
 }
