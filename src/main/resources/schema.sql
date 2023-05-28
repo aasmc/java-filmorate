@@ -9,20 +9,20 @@ drop table if exists FriendshipStatus cascade;
 create table if not exists Genres
 (
     ID   BIGINT auto_increment primary key,
-    NAME CHARACTER VARYING(20) not null
+    NAME CHARACTER VARYING(15) not null
 );
 
 create table if not exists Ratings
 (
     ID   BIGINT auto_increment primary key,
-    NAME CHARACTER VARYING(20) not null
+    NAME CHARACTER VARYING(15) not null
 );
 
 create table if not exists Films
 (
     ID           BIGINT auto_increment primary key,
-    NAME         CHARACTER VARYING not null,
-    DESCRIPTION  CHARACTER VARYING not null,
+    NAME         CHARACTER VARYING(63) not null,
+    DESCRIPTION  CHARACTER VARYING(255) not null,
     RELEASE_DATE TIMESTAMP         not null,
     DURATION     BIGINT            not null,
     RATING_ID    BIGINT,
@@ -45,9 +45,9 @@ create table if not exists FilmGenre
 create table if not exists Users
 (
     ID       BIGINT auto_increment primary key,
-    EMAIL    CHARACTER VARYING not null,
-    LOGIN    CHARACTER VARYING not null,
-    NAME     CHARACTER VARYING not null,
+    EMAIL    CHARACTER VARYING(63) not null,
+    LOGIN    CHARACTER VARYING(63) not null,
+    NAME     CHARACTER VARYING(63) not null,
     BIRTHDAY TIMESTAMP         not null
 );
 
