@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -44,6 +45,7 @@ public class UserDbStorage implements UserStorage {
         this.columnNamesProvider = columnNamesProvider;
     }
 
+    @Transactional
     @Override
     public User save(User user) {
         throwIfUserExists(user.getId());
@@ -82,6 +84,7 @@ public class UserDbStorage implements UserStorage {
     }
 
 
+    @Transactional
     @Override
     public User update(User user) {
         throwIfUserNotFound(user.getId());

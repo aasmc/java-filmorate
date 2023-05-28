@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.*;
@@ -49,6 +50,7 @@ public class FilmDbStorage implements FilmStorage {
         this.ratingDbStorage = ratingDbStorage;
     }
 
+    @Transactional
     @Override
     public Film save(Film film) {
         throwIfFilmExists(film.getId());
@@ -59,6 +61,7 @@ public class FilmDbStorage implements FilmStorage {
         return findFilmById(saved.getId()).get();
     }
 
+    @Transactional
     @Override
     public Film update(Film film) {
         throwIfFilmNotFound(film.getId());
