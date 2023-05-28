@@ -291,6 +291,7 @@ public class FilmDbStorage implements FilmStorage {
             throw new ResourceNotFoundException(msg);
         }
     }
+
     private boolean filmHasGenres(Film saved) {
         return !saved.getGenres().isEmpty();
     }
