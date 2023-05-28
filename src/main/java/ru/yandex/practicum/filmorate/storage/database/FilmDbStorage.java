@@ -317,7 +317,7 @@ public class FilmDbStorage implements FilmStorage {
         parameters.put("description", film.getDescription());
         parameters.put("release_date", film.getReleaseDate());
         parameters.put("duration", film.getDuration());
-        if (film.getMpa().getId() != null) {
+        if (film.getMpa() != null) {
             throwIfRatingNotFound(film.getMpa());
             parameters.put("rating_id", film.getMpa().getId());
         }
