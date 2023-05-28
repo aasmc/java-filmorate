@@ -8,9 +8,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.*;
-import ru.yandex.practicum.filmorate.storage.Constants;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.*;
 import ru.yandex.practicum.filmorate.storage.database.dbutils.*;
 
 import java.sql.PreparedStatement;
@@ -30,13 +28,17 @@ public class FilmDbStorage implements FilmStorage {
     private final ColumnNamesProvider columnNamesProvider;
     private final SqlProvider sqlProvider;
     private final UserStorage userStorage;
+    private final GenreStorage genreDbStorage;
+    private final RatingStorage ratingDbStorage;
 
     private SimpleJdbcInsert filmsJdbcInsert;
 
     public FilmDbStorage(JdbcTemplate jdbcTemplate,
                          ColumnNamesProvider columnNamesProvider,
                          SqlProvider sqlProvider,
-                         @Qualifier(Constants.DB_USER_STORAGE) UserStorage userStorage) {
+                         @Qualifier(Constants.DB_USER_STORAGE) UserStorage userStorage,
+                         @Qualifier(Constants.DB_GENRE_STORAGE) GenreStorage genreDbStorage,
+                         @Qualifier(Constants.DB_RATING_STORAGE) RatingStorage ratingDbStorage) {
         this.jdbcTemplate = jdbcTemplate;
         filmsJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("Films")
@@ -44,6 +46,8 @@ public class FilmDbStorage implements FilmStorage {
         this.columnNamesProvider = columnNamesProvider;
         this.userStorage = userStorage;
         this.sqlProvider = sqlProvider;
+        this.genreDbStorage = genreDbStorage;
+        this.ratingDbStorage = ratingDbStorage;
     }
 
     @Override
@@ -239,6 +243,9 @@ public class FilmDbStorage implements FilmStorage {
 
     private void updateFilmInternal(Film film) {
         String sql = sqlProvider.provideUpdateFilmSql();
+        if (film.getMpa() != null) {
+            throwIfRatingNotFound(film.getMpa());
+        }
         jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
@@ -253,6 +260,7 @@ public class FilmDbStorage implements FilmStorage {
             List<Genre> genres = saved.getGenres().stream()
                     .distinct()
                     .collect(Collectors.toList());
+            genres.forEach(this::throwIfGenreNotFound);
             String sql = sqlProvider.provideSaveFilmGenresSql();
             jdbcTemplate.batchUpdate(
                     sql,
@@ -266,6 +274,19 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
+    private void throwIfRatingNotFound(Rating r) {
+        if (ratingDbStorage.getById(r.getId()).isEmpty()) {
+            String msg = String.format("Rating with ID=%d not found!", r.getId());
+            throw new ResourceNotFoundException(msg);
+        }
+    }
+
+    private void throwIfGenreNotFound(Genre g) {
+        if (genreDbStorage.getById(g.getId()).isEmpty()) {
+            String msg = String.format("Genre with ID=%d not found!", g.getId());
+            throw new ResourceNotFoundException(msg);
+        }
+    }
     private boolean filmHasGenres(Film saved) {
         return !saved.getGenres().isEmpty();
     }
@@ -296,6 +317,7 @@ public class FilmDbStorage implements FilmStorage {
         parameters.put("release_date", film.getReleaseDate());
         parameters.put("duration", film.getDuration());
         if (film.getMpa().getId() != null) {
+            throwIfRatingNotFound(film.getMpa());
             parameters.put("rating_id", film.getMpa().getId());
         }
         Long id = (Long) filmsJdbcInsert.executeAndReturnKey(parameters);

@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateCorrect;
 
@@ -28,6 +29,7 @@ public class Film {
      * Специально сделал Long, а не long, так как, наверняка, в дальнейшем будем
      * сохранять это в базу данных с помощью Spring Data и Hibernate.
      */
+    @EqualsAndHashCode.Exclude
     private Long id;
     @NotBlank(message = "Название не может быть пустым.")
     private String name;
