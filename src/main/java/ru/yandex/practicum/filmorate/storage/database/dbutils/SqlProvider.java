@@ -144,7 +144,7 @@ public class SqlProvider {
                 "r.name mpa, " +
                 "g.id genre_id, " +
                 "g.name genre, " +
-                "u.id u_id, " +
+                "u.id u_id " +
                 "FROM Films f " +
                 "LEFT JOIN Ratings r ON f.rating_id = r.id " +
                 "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
@@ -173,7 +173,7 @@ public class SqlProvider {
                 "r.name mpa, " +
                 "g.id genre_id, " +
                 "g.name genre, " +
-                "u.id u_id, " +
+                "u.id u_id " +
                 "FROM Films f " +
                 "LEFT JOIN Ratings r ON f.rating_id = r.id " +
                 "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +
@@ -205,7 +205,7 @@ public class SqlProvider {
                 "r.name mpa, " +
                 "g.id genre_id, " +
                 "g.name genre, " +
-                "u.id u_id, " +
+                "u.id u_id " +
                 "FROM Films f " +
                 "LEFT JOIN Ratings r ON f.rating_id = r.id " +
                 "LEFT JOIN FilmGenre fg ON f.id = fg.film_id " +

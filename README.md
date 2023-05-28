@@ -23,7 +23,10 @@
 (спасибо этому посту: https://dba.stackexchange.com/questions/135941/designing-a-friendships-database-structure-should-i-use-a-multivalued-column)
 первичный ключ в которой состоит из двух полей: user_id (пользователь, который добавляет друга),
 friend_id (пользователь, которого добавляют в друзья). friend_id
-и user_id не могут быть одинаковыми, для этого при создании таблиц будет добавлен CHECK constraint.
+и user_id не могут быть одинаковыми, для этого при создании таблиц добавлен CHECK constraint.
+Дружба считается подтвержденной, если в таблице FriendshipStatus есть две записи о дружбе - пользователя и друга,
+с идентификаторами друг-друга в качестве friend_id. Если запись одна - значит дружба односторонняя и
+требует подтверждения со стороны того, кого пригласили в друзья. 
 
 ### Пример:
 
@@ -44,16 +47,21 @@ user_id   friend_id
 ### Прмеры запросов
 1. Получить все фильмы:
 ```sql
-SELECT f.id,
-       f.name,
-       f.description,
-       f.release_date,
-       f.duration,
-       g.name,
-       r.name
-FROM Films f LEFT JOIN FilmGenre fg ON f.id = fg.film_id
-LEFT JOIN Genres g ON g.id = fg.genre_id
-LEFT JOIN Ratings r ON r.id = f.rating_id;
+SELECT f.id film_id,
+       f.name film_name,
+       f.description film_descr,
+       f.release_date film_rel_d,
+       f.duration film_dur,
+       r.id mpa_id,
+       r.name mpa,
+       g.id genre_id,
+       g.name genre,
+       u.id u_id,
+FROM Films f LEFT JOIN Ratings r ON f.rating_id = r.id
+             LEFT JOIN FilmGenre fg ON f.id = fg.film_id
+             LEFT JOIN Genres g ON g.id = fg.genre_id
+             LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id
+             LEFT JOIN Users u ON u.id = ful.user_id;
 ```
 
 2. Добавить лайк фильму с ID = 1, от пользователя с ID = 2
@@ -63,7 +71,7 @@ INSERT INTO FilmUserLikes (film_id, user_id) VALUES (1, 2);
 
 3. Удалить у фильма с ID = 1 лайк пользователя с ID = 2
 ```sql
-DELETE FROM FilmUserLikes WHERE film_id = 1 ANF user_id = 2;
+DELETE FROM FilmUserLikes WHERE film_id = 1 AND user_id = 2;
 ```
 4. Получить 10 самых популярных фильмов:
 ```sql
@@ -73,20 +81,24 @@ WITH top_id_to_count AS (SELECT ff.id t_id, COUNT(ful.film_id) cnt
                          GROUP BY t_id
                          ORDER BY cnt DESC
                          LIMIT 10)
-SELECT f.id,
-       f.name,
-       f.description,
-       f.release_date,
-       f.duration,
-       g.name,
-       r.name
-    FROM Films f 
-    LEFT JOIN FilmGenre fg ON f.id = fg.film_id
-    LEFT JOIN Genres g ON g.id = fg.genre_id
-    LEFT JOIN Ratings r ON r.id = f.rating_id
-    WHERE f.id IN (SELECT t_id FROM top_id_to_count);
+SELECT f.id film_id,
+       f.name film_name,
+       f.description film_descr,
+       f.release_date film_rel_d,
+       f.duration film_dur,
+       r.id mpa_id,
+       r.name mpa,
+       g.id genre_id,
+       g.name genre,
+       u.id u_id,
+FROM Films f LEFT JOIN Ratings r ON f.rating_id = r.id
+             LEFT JOIN FilmGenre fg ON f.id = fg.film_id
+             LEFT JOIN Genres g ON g.id = fg.genre_id
+             LEFT JOIN FilmUserLikes ful ON ful.film_id = f.id
+             LEFT JOIN Users u ON u.id = ful.user_id
+WHERE f.id IN (SELECT t_id FROM top_id_to_count);
 ```
-То же самое, но без жанров и рейтинга и в отсортированном по просмотрам порядке: 
+То же самое, но без жанров, рейтинга и лайков и в отсортированном по просмотрам порядке: 
 ```sql
 WITH top_id_to_count AS (SELECT ff.id t_id, COUNT(ful.film_id) cnt
                          FROM "Films" ff
@@ -99,7 +111,7 @@ SELECT f.id,
        f.description,
        f.release_date,
        f.duration
-FROM "Films" f
+FROM Films f
     INNER JOIN top_id_to_count titc on f.id = titc.t_id
     ORDER BY titc.cnt DESC;
 ```

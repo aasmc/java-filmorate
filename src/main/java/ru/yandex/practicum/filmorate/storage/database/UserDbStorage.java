@@ -55,6 +55,9 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void saveUserFriendsInternal(User saved) {
+        saved.getFriends().forEach(f -> {
+            throwIfUserNotFound(f.getId());
+        });
         String sql = sqlProvider.provideSaveUserFriendsSql();
         jdbcTemplate.batchUpdate(
                 sql,
