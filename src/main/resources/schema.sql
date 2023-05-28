@@ -1,3 +1,11 @@
+drop table if exists Genres cascade;
+drop table if exists Ratings cascade;
+drop table if exists Films cascade;
+drop table if exists FilmGenre cascade;
+drop table if exists Users cascade;
+drop table if exists FilmUserLikes cascade;
+drop table if exists FriendshipStatus cascade;
+
 create table if not exists Genres
 (
     ID   BIGINT auto_increment primary key,

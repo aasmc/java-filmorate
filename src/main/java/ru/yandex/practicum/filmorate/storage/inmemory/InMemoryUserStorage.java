@@ -12,10 +12,10 @@ import ru.yandex.practicum.filmorate.util.IdGenerator;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_FILM_STORAGE;
+import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_USER_STORAGE;
 
 @Component
-@Qualifier(IN_MEMORY_FILM_STORAGE)
+@Qualifier(IN_MEMORY_USER_STORAGE)
 @RequiredArgsConstructor
 public class InMemoryUserStorage implements UserStorage {
 

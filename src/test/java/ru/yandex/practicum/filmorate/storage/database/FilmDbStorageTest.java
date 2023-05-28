@@ -228,6 +228,28 @@ class FilmDbStorageTest {
     }
 
     @Test
+    void whenUpdateExistingFilm_ifNewFilmHasNullAsMpa_returnsUpdatedFilm() {
+        Film film = newFilm();
+        film = filmDbStorage.save(film);
+
+        Film toUpdate = film.setMpa(null)
+                .setName("Updated Name")
+                .setDescription("Updated Description")
+                .setGenres(List.of(
+                        Genre.builder().id(1L).name(GenreName.COMEDY).build(),
+                        Genre.builder().id(2L).name(GenreName.DRAMA).build(),
+                        Genre.builder().id(3L).name(GenreName.CARTOON).build()
+                ));
+
+        Film updated = filmDbStorage.update(toUpdate);
+        assertThat(updated.getId()).isEqualTo(film.getId());
+        assertThat(updated.getName()).isEqualTo(toUpdate.getName());
+        assertThat(updated.getDescription()).isEqualTo(toUpdate.getDescription());
+        assertThat(updated.getMpa()).isNull();
+        assertThat(updated.getGenres()).isEqualTo(toUpdate.getGenres());
+    }
+
+    @Test
     void whenUpdateExistingFilm_returnsUpdatedFilm() {
         Film film = newFilm();
         film = filmDbStorage.save(film);

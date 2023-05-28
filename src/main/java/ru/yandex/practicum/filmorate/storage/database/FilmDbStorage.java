@@ -30,7 +30,6 @@ public class FilmDbStorage implements FilmStorage {
     private final UserStorage userStorage;
     private final GenreStorage genreDbStorage;
     private final RatingStorage ratingDbStorage;
-
     private SimpleJdbcInsert filmsJdbcInsert;
 
     public FilmDbStorage(JdbcTemplate jdbcTemplate,
@@ -243,15 +242,17 @@ public class FilmDbStorage implements FilmStorage {
 
     private void updateFilmInternal(Film film) {
         String sql = sqlProvider.provideUpdateFilmSql();
+        Long mpaId = null;
         if (film.getMpa() != null) {
             throwIfRatingNotFound(film.getMpa());
+            mpaId = film.getMpa().getId();
         }
         jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
                 film.getReleaseDate(),
                 film.getDuration(),
-                film.getMpa().getId(),
+                mpaId,
                 film.getId());
     }
 
