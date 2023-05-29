@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class RatingColumns {
+public class RatingTable {
     private String id;
     private String name;
 }

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.IUserService;
-import ru.yandex.practicum.filmorate.storage.Constants;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService implements IUserService {
 
-    @Qualifier(Constants.DB_USER_STORAGE)
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
 
     @Override

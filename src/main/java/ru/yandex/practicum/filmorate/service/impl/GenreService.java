@@ -10,12 +10,10 @@ import ru.yandex.practicum.filmorate.storage.GenreStorage;
 
 import java.util.List;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.DB_GENRE_STORAGE;
-
 @Service
 @RequiredArgsConstructor
 public class GenreService implements IGenreService {
-    @Qualifier(DB_GENRE_STORAGE)
+    @Qualifier("genreDbStorage")
     private final GenreStorage genreStorage;
 
     @Override

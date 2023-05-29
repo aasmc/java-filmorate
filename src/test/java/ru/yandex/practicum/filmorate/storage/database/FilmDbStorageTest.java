@@ -294,7 +294,20 @@ class FilmDbStorageTest {
     }
 
     @Test
-    void whenSaveNonExistingFilm_savedFilmAndReturnsItWithId() {
+    void whenSaveNonExistingFilmWithNullRating_savesFilmAndReturnsItWithId() {
+        Film film = newFilm();
+        film.setMpa(null);
+        Film retrieved = filmDbStorage.save(film);
+        assertThat(retrieved.getId()).isNotNull();
+        assertThat(retrieved.getName()).isEqualTo(TestConstants.NEW_FILM_NAME);
+        assertThat(retrieved.getDescription()).isEqualTo(TestConstants.NEW_FILM_DESCR);
+        assertThat(retrieved.getReleaseDate()).isEqualTo(TestConstants.NEW_FILM_REL_D);
+        assertThat(retrieved.getDuration()).isEqualTo(TestConstants.NEW_FILM_DUR);
+        assertThat(retrieved.getMpa()).isNull();
+    }
+
+    @Test
+    void whenSaveNonExistingFilm_savesFilmAndReturnsItWithId() {
         Film film = newFilm();
         Film retrieved = filmDbStorage.save(film);
         assertThat(retrieved.getId()).isNotNull();

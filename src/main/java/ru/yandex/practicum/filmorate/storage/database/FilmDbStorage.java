@@ -1,54 +1,44 @@
 package ru.yandex.practicum.filmorate.storage.database;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.*;
-import ru.yandex.practicum.filmorate.storage.*;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.RatingStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.storage.database.dbutils.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.DB_FILM_STORAGE;
 
 @Component
-@Qualifier(DB_FILM_STORAGE)
+@RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final ColumnNamesProvider columnNamesProvider;
     private final SqlProvider sqlProvider;
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
+    @Qualifier("genreDbStorage")
     private final GenreStorage genreDbStorage;
+    @Qualifier("ratingDbStorage")
     private final RatingStorage ratingDbStorage;
-    private SimpleJdbcInsert filmsJdbcInsert;
-
-    public FilmDbStorage(JdbcTemplate jdbcTemplate,
-                         ColumnNamesProvider columnNamesProvider,
-                         SqlProvider sqlProvider,
-                         @Qualifier(Constants.DB_USER_STORAGE) UserStorage userStorage,
-                         @Qualifier(Constants.DB_GENRE_STORAGE) GenreStorage genreDbStorage,
-                         @Qualifier(Constants.DB_RATING_STORAGE) RatingStorage ratingDbStorage) {
-        this.jdbcTemplate = jdbcTemplate;
-        filmsJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("Films")
-                .usingGeneratedKeyColumns("id");
-        this.columnNamesProvider = columnNamesProvider;
-        this.userStorage = userStorage;
-        this.sqlProvider = sqlProvider;
-        this.genreDbStorage = genreDbStorage;
-        this.ratingDbStorage = ratingDbStorage;
-    }
 
     @Transactional
     @Override
@@ -117,15 +107,15 @@ public class FilmDbStorage implements FilmStorage {
                 if (rating == null) {
                     rating = extractRating(rs, columnNamesProvider.provideRatingColumns());
                 }
-                GenreColumns genreColumns = columnNamesProvider.provideGenreColumns();
-                extractGenreAndSaveToMap(rs, idToGenre, genreColumns);
+                GenreTable genreTable = columnNamesProvider.provideGenreColumns();
+                extractGenreAndSaveToMap(rs, idToGenre, genreTable);
 
-                UserColumns columns = columnNamesProvider.provideUserColumns();
+                UserTable columns = columnNamesProvider.provideUserColumns();
                 extractUserIdAndSaveToSet(rs, userIds, columns);
 
-                FilmColumns filmColumns = columnNamesProvider.provideFilmColumns();
+                FilmTable filmTable = columnNamesProvider.provideFilmColumns();
                 if (extractedFilm == null) {
-                    extractedFilm = extractFilm(rs, filmColumns, filmId);
+                    extractedFilm = extractFilm(rs, filmTable, filmId);
                 }
             }
 
@@ -161,7 +151,7 @@ public class FilmDbStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
-    private Film extractFilm(ResultSet rs, FilmColumns columns, Long id) throws SQLException {
+    private Film extractFilm(ResultSet rs, FilmTable columns, Long id) throws SQLException {
         String filmName = rs.getString(columns.getName());
         String description = rs.getString(columns.getDescr());
         LocalDate releaseDate = rs.getDate(columns.getReleaseDate()).toLocalDate();
@@ -176,7 +166,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
 
-    private Rating extractRating(ResultSet rs, RatingColumns columns) throws SQLException {
+    private Rating extractRating(ResultSet rs, RatingTable columns) throws SQLException {
         Rating rating = null;
         Long mpaId = rs.getLong(columns.getId());
         if (mpaId != 0) {
@@ -191,7 +181,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private void extractUserIdAndSaveToSet(ResultSet rs,
                                            Set<Long> userIds,
-                                           UserColumns columns) throws SQLException {
+                                           UserTable columns) throws SQLException {
         Long userId = rs.getLong(columns.getId());
         if (userId != 0) {
             userIds.add(userId);
@@ -200,7 +190,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private Genre extractGenreAndSaveToMap(ResultSet rs,
                                            Map<Long, Genre> idToGenre,
-                                           GenreColumns columns) throws SQLException {
+                                           GenreTable columns) throws SQLException {
         Genre genre = null;
         Long genreId = rs.getLong(columns.getId());
         if (genreId != 0) {
@@ -316,16 +306,23 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private Film saveFilmInternal(Film film) {
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("name", film.getName());
-        parameters.put("description", film.getDescription());
-        parameters.put("release_date", film.getReleaseDate());
-        parameters.put("duration", film.getDuration());
-        if (film.getMpa() != null) {
-            throwIfRatingNotFound(film.getMpa());
-            parameters.put("rating_id", film.getMpa().getId());
-        }
-        Long id = (Long) filmsJdbcInsert.executeAndReturnKey(parameters);
+        String sql = sqlProvider.provideInsertFilmSql();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            ps.setString(1, film.getName());
+            ps.setString(2, film.getDescription());
+            ps.setObject(3, film.getReleaseDate());
+            ps.setLong(4, film.getDuration());
+            if (film.getMpa() == null) {
+                ps.setNull(5, Types.BIGINT);
+            } else {
+                ps.setLong(5, film.getMpa().getId());
+            }
+            return ps;
+        }, keyHolder);
+
+        Long id = (Long) keyHolder.getKey();
         film.setId(id);
         return film;
     }
@@ -347,17 +344,17 @@ public class FilmDbStorage implements FilmStorage {
             while (rs.next()) {
                 Rating rating = extractRating(rs, columnNamesProvider.provideRatingColumns());
 
-                GenreColumns genreColumns = columnNamesProvider.provideGenreColumns();
-                Genre genre = extractGenreAndSaveToMap(rs, idToGenre, genreColumns);
+                GenreTable genreTable = columnNamesProvider.provideGenreColumns();
+                Genre genre = extractGenreAndSaveToMap(rs, idToGenre, genreTable);
 
-                UserColumns userColumns = columnNamesProvider.provideUserColumns();
-                Long userId = extractUserId(rs, userColumns);
+                UserTable userTable = columnNamesProvider.provideUserColumns();
+                Long userId = extractUserId(rs, userTable);
 
-                FilmColumns filmColumns = columnNamesProvider.provideFilmColumns();
-                Long filmId = rs.getLong(filmColumns.getId());
+                FilmTable filmTable = columnNamesProvider.provideFilmColumns();
+                Long filmId = rs.getLong(filmTable.getId());
                 Film film = idToFilm.get(filmId);
                 if (film == null) {
-                    film = extractFilm(rs, filmColumns, filmId);
+                    film = extractFilm(rs, filmTable, filmId);
                     // set rating only once since it is one-to-one
                     if (rating != null) {
                         film.setMpa(rating);
@@ -375,8 +372,8 @@ public class FilmDbStorage implements FilmStorage {
         }, args);
     }
 
-    private Long extractUserId(ResultSet rs, UserColumns userColumns) throws SQLException {
-        Long userId = rs.getLong(userColumns.getId());
+    private Long extractUserId(ResultSet rs, UserTable userTable) throws SQLException {
+        Long userId = rs.getLong(userTable.getId());
         return userId != 0 ? userId : null;
     }
 }

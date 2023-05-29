@@ -21,19 +21,16 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.*;
-
 @Component
-@Qualifier(IN_MEMORY_FILM_STORAGE)
 @RequiredArgsConstructor
 public class InMemoryFilmStorage implements FilmStorage {
 
     private final Map<Long, Film> filmMap;
     private final Map<Long, User> userMap;
     private final IdGenerator idGenerator;
-    @Qualifier(IN_MEMORY_RATING_STORAGE)
+    @Qualifier("inMemoryRatingStorage")
     private final RatingStorage ratingStorage;
-    @Qualifier(IN_MEMORY_GENRE_STORAGE)
+    @Qualifier("inMemoryGenreStorage")
     private final GenreStorage genreStorage;
 
     @Override

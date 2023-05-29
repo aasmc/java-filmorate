@@ -1,8 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.database;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
@@ -11,30 +12,18 @@ import ru.yandex.practicum.filmorate.model.RatingName;
 import ru.yandex.practicum.filmorate.storage.RatingStorage;
 import ru.yandex.practicum.filmorate.storage.database.dbutils.SqlProvider;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.DB_RATING_STORAGE;
-
 @Component
-@Qualifier(DB_RATING_STORAGE)
+@RequiredArgsConstructor
 public class RatingDbStorage implements RatingStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final SqlProvider sqlProvider;
-    private SimpleJdbcInsert simpleJdbcInsert;
-
-    public RatingDbStorage(JdbcTemplate jdbcTemplate, SqlProvider sqlProvider) {
-        this.jdbcTemplate = jdbcTemplate;
-        simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("Ratings")
-                .usingGeneratedKeyColumns("id");
-        this.sqlProvider = sqlProvider;
-    }
 
     @Override
     public List<Rating> findAll() {
@@ -61,10 +50,15 @@ public class RatingDbStorage implements RatingStorage {
             String msg = String.format("Rating already exists: '%s'.", rating.getName().getRating());
             throw new ResourceAlreadyExistsException(msg);
         }
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("name", rating.getName().getRating());
-        Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        rating.setId((Long) id);
+        String sql = sqlProvider.provideInsertRatingSql();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            ps.setString(1, rating.getName().getRating());
+            return ps;
+        }, keyHolder);
+        Long id = (Long) keyHolder.getKey();
+        rating.setId(id);
         return rating;
     }
 

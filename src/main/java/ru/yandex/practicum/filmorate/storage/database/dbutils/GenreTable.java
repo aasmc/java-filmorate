@@ -5,10 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class FilmColumns {
+public class GenreTable {
     private String id;
     private String name;
-    private String descr;
-    private String releaseDate;
-    private String duration;
 }

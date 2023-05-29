@@ -1,8 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.database;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +13,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.storage.database.dbutils.ColumnNamesProvider;
 import ru.yandex.practicum.filmorate.storage.database.dbutils.SqlProvider;
-import ru.yandex.practicum.filmorate.storage.database.dbutils.UserColumns;
+import ru.yandex.practicum.filmorate.storage.database.dbutils.UserTable;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,27 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.DB_USER_STORAGE;
-
 @Component
-@Qualifier(DB_USER_STORAGE)
+@RequiredArgsConstructor
 public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final SqlProvider sqlProvider;
     private final ColumnNamesProvider columnNamesProvider;
-    private SimpleJdbcInsert usersJdbcInsert;
-
-    public UserDbStorage(JdbcTemplate jdbcTemplate,
-                         SqlProvider sqlProvider,
-                         ColumnNamesProvider columnNamesProvider) {
-        this.jdbcTemplate = jdbcTemplate;
-        usersJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("Users")
-                .usingGeneratedKeyColumns("id");
-        this.sqlProvider = sqlProvider;
-        this.columnNamesProvider = columnNamesProvider;
-    }
 
     @Transactional
     @Override
@@ -73,12 +60,17 @@ public class UserDbStorage implements UserStorage {
     }
 
     private User saveUserInternal(User user) {
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("email", user.getEmail());
-        parameters.put("login", user.getLogin());
-        parameters.put("name", user.getName());
-        parameters.put("birthday", user.getBirthday());
-        Long id = (Long) usersJdbcInsert.executeAndReturnKey(parameters);
+        String sql = sqlProvider.provideInsertUserSql();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            ps.setString(1, user.getEmail());
+            ps.setString(2, user.getLogin());
+            ps.setString(3, user.getName());
+            ps.setObject(4, user.getBirthday());
+            return ps;
+        }, keyHolder);
+        Long id = (Long) keyHolder.getKey();
         user.setId(id);
         return user;
     }
@@ -180,7 +172,7 @@ public class UserDbStorage implements UserStorage {
         return Optional.empty();
     }
 
-    private User extractUser(ResultSet rs, UserColumns columns, Long id) throws SQLException {
+    private User extractUser(ResultSet rs, UserTable columns, Long id) throws SQLException {
         String email = rs.getString(columns.getEmail());
         String login = rs.getString(columns.getLogin());
         String name = rs.getString(columns.getName());
@@ -194,7 +186,7 @@ public class UserDbStorage implements UserStorage {
                 .build();
     }
 
-    private User extractFriend(ResultSet rs, UserColumns columns) throws SQLException {
+    private User extractFriend(ResultSet rs, UserTable columns) throws SQLException {
         User friend = null;
         Long friendId = rs.getLong(columns.getId());
         if (friendId != 0L) {
@@ -229,7 +221,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     private List<User> selectUsersBySqlInternal(String sql, Object... args) {
-        UserColumns userColumns = columnNamesProvider.provideUserColumns();
+        UserTable userTable = columnNamesProvider.provideUserColumns();
         return jdbcTemplate.query(sql, rs -> {
             Map<Long, User> idToUser = new HashMap<>();
             while (rs.next()) {
@@ -239,10 +231,10 @@ public class UserDbStorage implements UserStorage {
                     idToUser.put(friend.getId(), friend);
                 }
 
-                Long id = rs.getLong(userColumns.getId());
+                Long id = rs.getLong(userTable.getId());
                 User user = idToUser.get(id);
                 if (user == null) { // first time we see the user
-                    user = extractUser(rs, userColumns, id);
+                    user = extractUser(rs, userTable, id);
                     idToUser.put(user.getId(), user);
                 }
                 if (friend != null) {

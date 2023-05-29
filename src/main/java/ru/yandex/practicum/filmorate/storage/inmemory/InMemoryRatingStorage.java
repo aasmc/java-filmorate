@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.inmemory;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.model.Rating;
@@ -12,11 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_RATING_STORAGE;
-
 @Component
 @RequiredArgsConstructor
-@Qualifier(IN_MEMORY_RATING_STORAGE)
 public class InMemoryRatingStorage implements RatingStorage {
 
     private final IdGenerator idGenerator;

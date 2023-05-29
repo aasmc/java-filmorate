@@ -9,16 +9,15 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.GenreName;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.RatingName;
-import ru.yandex.practicum.filmorate.storage.Constants;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.RatingStorage;
 
 @Component
 @RequiredArgsConstructor
 public class DemoAppRunner implements ApplicationRunner {
-    @Qualifier(Constants.IN_MEMORY_GENRE_STORAGE)
+    @Qualifier("inMemoryGenreStorage")
     private final GenreStorage genreStorage;
-    @Qualifier(Constants.IN_MEMORY_RATING_STORAGE)
+    @Qualifier("inMemoryRatingStorage")
     private final RatingStorage ratingStorage;
 
     @Override

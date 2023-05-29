@@ -1,8 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.database;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
@@ -11,30 +12,18 @@ import ru.yandex.practicum.filmorate.model.GenreName;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.database.dbutils.SqlProvider;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.DB_GENRE_STORAGE;
-
 @Component
-@Qualifier(DB_GENRE_STORAGE)
+@RequiredArgsConstructor
 public class GenreDbStorage implements GenreStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final SqlProvider sqlProvider;
-    private SimpleJdbcInsert simpleJdbcInsert;
-
-    public GenreDbStorage(JdbcTemplate jdbcTemplate, SqlProvider sqlProvider) {
-        this.jdbcTemplate = jdbcTemplate;
-        simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("Genres")
-                .usingGeneratedKeyColumns("id");
-        this.sqlProvider = sqlProvider;
-    }
 
     @Override
     public List<Genre> findAll() {
@@ -47,7 +36,7 @@ public class GenreDbStorage implements GenreStorage {
         String sql = sqlProvider.provideFindGenreByIdSql();
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (rowSet.next()) {
-             return Optional.of(Genre.builder()
+            return Optional.of(Genre.builder()
                     .id(rowSet.getLong("id"))
                     .name(GenreName.fromString(rowSet.getString("name")))
                     .build());
@@ -61,10 +50,15 @@ public class GenreDbStorage implements GenreStorage {
             String msg = String.format("Genre already exists: %s", genre.getName().getGenre());
             throw new ResourceAlreadyExistsException(msg);
         }
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("name", genre.getName().getGenre());
-        Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
-        genre.setId((Long) id);
+        String sql = sqlProvider.provideInsertGenreSql();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            ps.setString(1, genre.getName().getGenre());
+            return ps;
+        }, keyHolder);
+        Long id = (Long) keyHolder.getKey();
+        genre.setId(id);
         return genre;
     }
 

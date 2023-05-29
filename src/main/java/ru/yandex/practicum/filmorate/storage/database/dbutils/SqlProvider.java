@@ -13,12 +13,20 @@ public class SqlProvider {
         return "SELECT * FROM Ratings";
     }
 
+    public String provideInsertRatingSql() {
+        return "INSERT INTO Ratings (name) VALUES (?)";
+    }
+
     public String provideFindGenreByIdSql() {
         return "SELECT * FROM Genres WHERE id = ?";
     }
 
     public String provideFindAllGenresSql() {
         return "SELECT * FROM Genres";
+    }
+
+    public String provideInsertGenreSql() {
+        return "INSERT INTO Genres (name) VALUES (?)";
     }
 
     public String provideCheckUserIdSql() {
@@ -117,6 +125,11 @@ public class SqlProvider {
         return "INSERT INTO FriendshipStatus (user_id, friend_id) VALUES (?, ?)";
     }
 
+    public String provideInsertUserSql() {
+        return "INSERT INTO Users (email, login, name, birthday) " +
+               "VALUES (?, ?, ?, ?)";
+    }
+
     public String provideDeleteFilmGenresSql() {
         return "DELETE FROM FilmGenre WHERE film_id = ?";
     }
@@ -193,6 +206,11 @@ public class SqlProvider {
 
     public String provideAddUserLikesToFilmSql() {
         return "INSERT INTO FilmUserLikes (film_id, user_id) VALUES (?, ?)";
+    }
+
+    public String provideInsertFilmSql() {
+        return "INSERT INTO Films (name, description, release_date, duration, rating_id) " +
+                "VALUES (?, ?, ?, ?, ?)";
     }
 
     public String provideFilmFindAllSql() {

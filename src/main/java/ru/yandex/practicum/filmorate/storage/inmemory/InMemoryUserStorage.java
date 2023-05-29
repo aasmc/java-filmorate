@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.inmemory;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
@@ -12,10 +11,7 @@ import ru.yandex.practicum.filmorate.util.IdGenerator;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.IN_MEMORY_USER_STORAGE;
-
 @Component
-@Qualifier(IN_MEMORY_USER_STORAGE)
 @RequiredArgsConstructor
 public class InMemoryUserStorage implements UserStorage {
 

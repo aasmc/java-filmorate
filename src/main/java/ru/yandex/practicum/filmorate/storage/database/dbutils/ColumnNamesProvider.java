@@ -4,8 +4,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ColumnNamesProvider {
-    public UserColumns provideUserColumns() {
-        return UserColumns.builder()
+    public UserTable provideUserColumns() {
+        return UserTable.builder()
                 .id("u_id")
                 .email("u_email")
                 .login("u_login")
@@ -14,8 +14,8 @@ public class ColumnNamesProvider {
                 .build();
     }
 
-    public UserColumns provideFriendColumns() {
-        return UserColumns.builder()
+    public UserTable provideFriendColumns() {
+        return UserTable.builder()
                 .id("f_id")
                 .email("f_email")
                 .login("f_login")
@@ -24,22 +24,22 @@ public class ColumnNamesProvider {
                 .build();
     }
 
-    public RatingColumns provideRatingColumns() {
-        return RatingColumns.builder()
+    public RatingTable provideRatingColumns() {
+        return RatingTable.builder()
                 .id("mpa_id")
                 .name("mpa")
                 .build();
     }
 
-    public GenreColumns provideGenreColumns() {
-        return GenreColumns.builder()
+    public GenreTable provideGenreColumns() {
+        return GenreTable.builder()
                 .id("genre_id")
                 .name("genre")
                 .build();
     }
 
-    public FilmColumns provideFilmColumns() {
-        return FilmColumns.builder()
+    public FilmTable provideFilmColumns() {
+        return FilmTable.builder()
                 .id("film_id")
                 .name("film_name")
                 .descr("film_descr")

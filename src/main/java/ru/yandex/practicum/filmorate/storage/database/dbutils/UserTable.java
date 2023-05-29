@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class UserColumns {
+public class UserTable {
     private String id;
     private String email;
     private String login;

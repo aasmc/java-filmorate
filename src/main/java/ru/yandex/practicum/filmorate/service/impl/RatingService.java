@@ -10,13 +10,11 @@ import ru.yandex.practicum.filmorate.storage.RatingStorage;
 
 import java.util.List;
 
-import static ru.yandex.practicum.filmorate.storage.Constants.DB_RATING_STORAGE;
-
 @Service
 @RequiredArgsConstructor
 public class RatingService implements IRatingService {
 
-    @Qualifier(DB_RATING_STORAGE)
+    @Qualifier("ratingDbStorage")
     private final RatingStorage ratingStorage;
 
     @Override

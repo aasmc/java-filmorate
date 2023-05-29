@@ -9,24 +9,24 @@ drop table if exists FriendshipStatus cascade;
 create table if not exists Genres
 (
     ID   BIGINT auto_increment primary key,
-    NAME CHARACTER VARYING(15) not null
+    NAME VARCHAR(15) not null
 );
 
 create table if not exists Ratings
 (
     ID   BIGINT auto_increment primary key,
-    NAME CHARACTER VARYING(15) not null
+    NAME VARCHAR(15) not null
 );
 
 create table if not exists Films
 (
     ID           BIGINT auto_increment primary key,
-    NAME         CHARACTER VARYING(63) not null,
-    DESCRIPTION  CHARACTER VARYING(255) not null,
+    NAME         VARCHAR(63) not null,
+    DESCRIPTION  VARCHAR(255) not null,
     RELEASE_DATE TIMESTAMP         not null,
     DURATION     BIGINT            not null,
     RATING_ID    BIGINT,
-    constraint "Films_Ratings_ID_fk"
+    constraint "films_ratings_id_fk"
         foreign key (RATING_ID) references Ratings
 );
 
@@ -34,20 +34,20 @@ create table if not exists FilmGenre
 (
     FILM_ID  BIGINT not null,
     GENRE_ID BIGINT not null,
-    constraint "FilmGenre_pk"
+    constraint "film_genre_pk"
         primary key (FILM_ID, GENRE_ID),
-    constraint "FilmGenre_Films_ID_fk"
+    constraint "film_genre_films_id_fk"
         foreign key (FILM_ID) references Films,
-    constraint "FilmGenre_Genres_ID_fk"
+    constraint "film_genre_genres_id_fk"
         foreign key (GENRE_ID) references Genres
 );
 
 create table if not exists Users
 (
     ID       BIGINT auto_increment primary key,
-    EMAIL    CHARACTER VARYING(63) not null,
-    LOGIN    CHARACTER VARYING(63) not null,
-    NAME     CHARACTER VARYING(63) not null,
+    EMAIL    VARCHAR(63) not null,
+    LOGIN    VARCHAR(63) not null,
+    NAME     VARCHAR(63) not null,
     BIRTHDAY TIMESTAMP         not null
 );
 
@@ -55,11 +55,11 @@ create table if not exists FilmUserLikes
 (
     FILM_ID BIGINT not null,
     USER_ID BIGINT not null,
-    constraint "FilmUserLikes_pk"
+    constraint "film_user_likes_pk"
         primary key (FILM_ID, USER_ID),
-    constraint "FilmUserLikes_Films_ID_fk"
+    constraint "film_user_likes_film_id_fk"
         foreign key (FILM_ID) references Films,
-    constraint "FilmUserLikes_Users_ID_fk"
+    constraint "film_user_likes_user_id_fk"
         foreign key (USER_ID) references Users
 );
 
@@ -67,12 +67,12 @@ create table if not exists FriendshipStatus
 (
     USER_ID   BIGINT not null,
     FRIEND_ID BIGINT not null,
-    constraint "FriendshipStatus_pk"
+    constraint "friendship_status_pk"
         primary key (USER_ID, FRIEND_ID),
-    constraint "FriendshipStatus_Users_ID_Friend_fk"
+    constraint "friendship_status_user_id_friend_fk"
         foreign key (FRIEND_ID) references Users,
-    constraint "FriendshipStatus_Users_ID_User_fk"
+    constraint "friendship_status_user_id_user_fk"
         foreign key (USER_ID) references Users,
-    constraint "FriendsAreDistinct_Check"
+    constraint "friends_are_distinct_ck"
         check (USER_ID <> FRIEND_ID)
 );

@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.IFilmService;
 import ru.yandex.practicum.filmorate.service.IUserService;
-import ru.yandex.practicum.filmorate.storage.Constants;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.util.List;
@@ -17,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmService implements IFilmService {
 
-    @Qualifier(Constants.DB_FILM_STORAGE)
+    @Qualifier("filmDbStorage")
     private final FilmStorage filmStorage;
     private final IUserService userService;
 
