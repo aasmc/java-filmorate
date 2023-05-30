@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateCorrect;
 
@@ -9,7 +10,9 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,6 +29,7 @@ public class Film {
      * Специально сделал Long, а не long, так как, наверняка, в дальнейшем будем
      * сохранять это в базу данных с помощью Spring Data и Hibernate.
      */
+    @EqualsAndHashCode.Exclude
     private Long id;
     @NotBlank(message = "Название не может быть пустым.")
     private String name;
@@ -38,19 +42,23 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительной.")
     private long duration;
 
+    private Rating mpa;
+
+    @Builder.Default
+    private List<Genre> genres = new ArrayList<>();
+
     @Builder.Default
     private Set<Long> userLikes = new HashSet<>();
-
-    public void addLikeByUserWithId(Long userId) {
-        userLikes.add(userId);
-    }
-
-    public void removeLikeByUserWithId(Long userId) {
-        userLikes.remove(userId);
-    }
 
     public int getLikesCount() {
         return userLikes.size();
     }
 
+    public void addUserLike(Long userId) {
+        userLikes.add(userId);
+    }
+
+    public void removeUserLike(Long userId) {
+        userLikes.remove(userId);
+    }
 }

@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.IFilmService;
@@ -14,9 +16,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmService implements IFilmService {
 
+    @Qualifier("filmDbStorage")
     private final FilmStorage filmStorage;
     private final IUserService userService;
-
 
     @Override
     public List<Film> findAllFilms() {
@@ -54,7 +56,11 @@ public class FilmService implements IFilmService {
 
     @Override
     public Film getFilmById(Long filmId) {
-        return filmStorage.findFilmById(filmId);
+        return filmStorage.findFilmById(filmId)
+                .orElseThrow(() -> {
+                    String msg = String.format("Film with ID = %d not found.", filmId);
+                    return new ResourceNotFoundException(msg);
+                });
     }
 
     private User getUser(Long userId) {

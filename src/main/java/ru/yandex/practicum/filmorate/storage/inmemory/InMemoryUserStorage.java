@@ -20,7 +20,7 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User save(User user) {
-        if (userAlreadyExists(user)) {
+        if (userAlreadyExists(user.getId())) {
             String msg = String.format("User with ID: %d already exists", user.getId());
             throw new ResourceAlreadyExistsException(msg);
         }
@@ -31,7 +31,7 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User update(User user) {
-        if (userNotFound(user)) {
+        if (userNotFound(user.getId())) {
             String msg = String.format("User with ID: %d is not found.", user.getId());
             throw new ResourceNotFoundException(msg);
         }
@@ -47,9 +47,10 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public void addFriendForUser(Long userId, Long newFriendId) {
         User user = findUserOrThrow(userId);
-        User friend = findFriendOrThrow(newFriendId);
-        user.addFriend(friend);
+        User userFriend = findFriendOrThrow(newFriendId);
+        user.addFriend(userFriend);
     }
+
 
     @Override
     public void removeFriendForUser(Long userId, Long friendId) {
@@ -61,31 +62,29 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public List<User> getFriends(Long userId) {
         User user = findUserOrThrow(userId);
-        return findUsersWithIds(user.getFriends());
+        return List.copyOf(user.getFriends());
     }
 
     @Override
     public List<User> getCommonFriendsForUser(Long userId, Long friendId) {
         User user = findUserOrThrow(userId);
         User friend = findFriendOrThrow(friendId);
-        Set<Long> commonFriendsIds = user.commonFriendsWith(friend);
-        return findUsersWithIds(commonFriendsIds);
+        Set<User> commonFriends = new HashSet<>(user.getFriends());
+        commonFriends.retainAll(friend.getFriends());
+        return List.copyOf(commonFriends);
     }
 
     @Override
-    public User findUserById(Long id) {
-        return findUserOrThrow(id);
+    public Optional<User> findUserById(Long id) {
+        return Optional.ofNullable(userMap.get(id));
     }
 
-    private List<User> findUsersWithIds(Set<Long> ids) {
-        List<User> users = new ArrayList<>();
-        ids.forEach(uId -> {
-            User friend = userMap.get(uId);
-            if (null != friend) {
-                users.add(friend);
-            }
-        });
-        return users;
+    @Override
+    public Optional<Long> checkUserId(Long id) {
+        if (userMap.containsKey(id)) {
+            return Optional.of(id);
+        }
+        return Optional.empty();
     }
 
     private User findUserOrThrow(Long userId) {
@@ -105,13 +104,5 @@ public class InMemoryUserStorage implements UserStorage {
     private User findUserOrThrow(Long userId, Supplier<String> msgSupplier) {
         return Optional.ofNullable(userMap.get(userId))
                 .orElseThrow(() -> new ResourceNotFoundException(msgSupplier.get()));
-    }
-
-    private boolean userAlreadyExists(User user) {
-        return user.getId() != null && userMap.containsKey(user.getId());
-    }
-
-    private boolean userNotFound(User user) {
-        return user.getId() == null || !userMap.containsKey(user.getId());
     }
 }

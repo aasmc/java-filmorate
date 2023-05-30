@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.jackson.Jacksonized;
 import ru.yandex.practicum.filmorate.validation.LoginCorrect;
 
@@ -25,6 +26,7 @@ public class User {
      * Специально сделал Long, а не long, так как, наверняка, в дальнейшем будем
      * сохранять это в базу данных с помощью Spring Data и Hibernate.
      */
+    @EqualsAndHashCode.Exclude
     private Long id;
     @Email(message = "электронная почта не может быть пустой и должна содержать символ @.")
     private String email;
@@ -34,20 +36,14 @@ public class User {
     @Past
     private LocalDate birthday;
     @Builder.Default
-    private Set<Long> friends = new HashSet<>();
+    @EqualsAndHashCode.Exclude
+    private Set<User> friends = new HashSet<>();
 
-    public void addFriend(User user) {
-        friends.add(user.getId());
-        user.getFriends().add(this.id);
+    public void addFriend(User friend) {
+        friends.add(friend);
     }
 
-    public void removeFriend(User user) {
-        friends.remove(user.getId());
-    }
-
-    public Set<Long> commonFriendsWith(User user) {
-        Set<Long> intersection = new HashSet<>(friends);
-        intersection.retainAll(user.getFriends());
-        return intersection;
+    public void removeFriend(User friend) {
+        friends.remove(friend);
     }
 }

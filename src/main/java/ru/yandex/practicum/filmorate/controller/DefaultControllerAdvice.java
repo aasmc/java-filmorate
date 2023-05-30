@@ -29,7 +29,10 @@ public class DefaultControllerAdvice {
                 .build();
     }
 
-    @ExceptionHandler(value = {ResourceAlreadyExistsException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler(value = {
+            ResourceAlreadyExistsException.class,
+            HttpMessageNotReadableException.class
+    })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleResourceExistsAndNullRequestBody(RuntimeException ex) {
         log.error(ex.getMessage());

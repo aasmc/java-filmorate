@@ -1,11 +1,17 @@
 package ru.yandex.practicum.filmorate.storage.inmemory;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ResourceAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Rating;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.RatingStorage;
 import ru.yandex.practicum.filmorate.util.IdGenerator;
 
 import java.util.Comparator;
@@ -20,7 +26,12 @@ import java.util.stream.Collectors;
 public class InMemoryFilmStorage implements FilmStorage {
 
     private final Map<Long, Film> filmMap;
+    private final Map<Long, User> userMap;
     private final IdGenerator idGenerator;
+    @Qualifier("inMemoryRatingStorage")
+    private final RatingStorage ratingStorage;
+    @Qualifier("inMemoryGenreStorage")
+    private final GenreStorage genreStorage;
 
     @Override
     public Film save(Film film) {
@@ -29,6 +40,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             throw new ResourceAlreadyExistsException(msg);
         }
         film.setId(idGenerator.nextId());
+        setGenresAndRatingToFilm(film);
         filmMap.put(film.getId(), film);
         return film;
     }
@@ -39,6 +51,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             String msg = String.format("Film with ID: %d is not found.", film.getId());
             throw new ResourceNotFoundException(msg);
         }
+        setGenresAndRatingToFilm(film);
         filmMap.put(film.getId(), film);
         return film;
     }
@@ -51,13 +64,15 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public void addUserLikeToFilm(Long userId, Long filmId) {
         Film film = findFilmOrThrow(filmId);
-        film.addLikeByUserWithId(userId);
+        User user = findUserOrThrow(userId);
+        film.addUserLike(user.getId());
     }
 
     @Override
     public void removeUserLike(Long userId, Long filmId) {
         Film film = findFilmOrThrow(filmId);
-        film.removeLikeByUserWithId(userId);
+        User user = findUserOrThrow(userId);
+        film.removeUserLike(user.getId());
     }
 
     @Override
@@ -69,8 +84,16 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film findFilmById(Long filmId) {
-        return findFilmOrThrow(filmId);
+    public Optional<Film> findFilmById(Long filmId) {
+        return Optional.ofNullable(filmMap.get(filmId));
+    }
+
+    @Override
+    public Optional<Long> checkFilmId(Long id) {
+        if (filmMap.containsKey(id)) {
+            return Optional.of(id);
+        }
+        return Optional.empty();
     }
 
     private Film findFilmOrThrow(Long filmId) {
@@ -85,6 +108,45 @@ public class InMemoryFilmStorage implements FilmStorage {
     private Film findFilmOrThrow(Long filmId, Supplier<String> msgSupplier) {
         return Optional.ofNullable(filmMap.get(filmId))
                 .orElseThrow(() -> new ResourceNotFoundException(msgSupplier.get()));
+    }
+
+    private User findUserOrThrow(Long userId) {
+        return findUserOrThrow(userId,
+                () -> provideNotFoundErrorMessage("User", userId));
+    }
+
+    private User findUserOrThrow(Long userId, Supplier<String> msgSupplier) {
+        return Optional.ofNullable(userMap.get(userId))
+                .orElseThrow(() -> new ResourceNotFoundException(msgSupplier.get()));
+    }
+
+    private void setGenresAndRatingToFilm(Film film) {
+        List<Genre> genres = getFilmGenres(film);
+        film.setGenres(genres);
+        Rating rating = getFilmRating(film);
+        film.setMpa(rating);
+    }
+
+    private List<Genre> getFilmGenres(Film film) {
+        return film.getGenres().stream()
+                .map(Genre::getId)
+                .map(genreStorage::getById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private Rating getFilmRating(Film film) {
+        Rating rating = film.getMpa();
+        if (rating == null) {
+            return null;
+        }
+        return ratingStorage.getById(film.getMpa().getId())
+                .orElseThrow(() -> {
+                    String msg = String.format("Rating with ID: %d is not found.", film.getMpa().getId());
+                    return new ResourceNotFoundException(msg);
+                });
     }
 
     private boolean filmAlreadyExists(Film film) {
